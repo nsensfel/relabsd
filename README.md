@@ -66,3 +66,8 @@ Number of Balls:    0
 GameController:
   not a gamepad
 ```
+# Troubleshooting
+## I can't find my (real) input device.
+Your input device should be listed in /dev/input.
+
+If you are using a 3DConnexion device and not finding it in /dev/input, read [this wiki page](https://github.com/nsensfel/relabsd/wiki/Note-on-3DConnexion-devices).
