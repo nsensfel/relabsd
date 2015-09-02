@@ -8,7 +8,7 @@
 
 #define _HIGHEST_DEBUG_LVL 100
 
-#define _DEBUG_LVL                           _HIGHEST_DEBUG_LVL
+#define _DEBUG_LVL                           0 /*_HIGHEST_DEBUG_LVL*/
 #define _ENABLE_WARNINGS_OUTPUT              1
 #define _ENABLE_RUNTIME_ERRORS_OUTPUT        1
 #define _ENABLE_PROGRAMMING_ERRORS_OUTPUT    1
