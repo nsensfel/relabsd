@@ -19,6 +19,44 @@ static void interrupt (int signal_id)
    _S_WARNING("Interrupted, will exit at the next input device event.");
 }
 
+static void handle_relative_axis_event
+(
+   const struct relabsd_config * const conf,
+   const struct relabsd_device * const dev,
+   unsigned int const input_type,
+   unsigned int const input_code,
+   int const value
+)
+{
+   unsigned int abs_code;
+   enum relabsd_axis rad_code;
+
+   rad_code = relabsd_axis_convert_evdev_rel(input_code, &abs_code);
+
+   if (rad_code == RELABSD_UNKNOWN)
+   {
+      /*
+       * EV_REL events that do not concern an axis that was explicitly
+       * configured are retransmitted as is.
+       */
+      relabsd_device_write_evdev_event
+      (
+         dev,
+         input_type,
+         input_code,
+         value
+      );
+   }
+   else if (relabsd_config_allows(conf, rad_code, value))
+   {
+      /*
+       * This filters out events which are inconsistent with 'conf', such as
+       * values higher than the axis' configured maximum.
+       */
+      relabsd_device_write_evdev_event(dev, EV_ABS, abs_code, value);
+   }
+}
+
 static void convert_input
 (
    const struct relabsd_config * const conf,
@@ -27,37 +65,28 @@ static void convert_input
 )
 {
    unsigned int input_type, input_code, abs_code;
-   enum relabsd_axis rad_code;
    int value;
 
    while (RELABSD_RUN == 1)
    {
       if (relabsd_input_read(input, &input_type, &input_code, &value) < 0)
       {
+         /*
+          * The next event should not be retransmitted, or some kind of error
+          * happened.
+          */
+         /* TODO: error handling. */
          continue;
       }
 
       if (input_type == EV_REL)
       {
-         rad_code = relabsd_axis_convert_evdev_rel(input_code, &abs_code);
-
-         if (rad_code == RELABSD_UNKNOWN)
-         {
-            relabsd_device_write_evdev_event
-            (
-               dev,
-               input_type,
-               input_code,
-               value
-            );
-         }
-         else if (relabsd_config_allows(conf, rad_code, value))
-         {
-            relabsd_device_write_evdev_event(dev, EV_ABS, abs_code, value);
-         }
+         /* We might have to convert the event. */
+         handle_relative_axis_event(conf, dev, input_type, input_code, value);
       }
       else
       {
+         /* Any other event is retransmitted as is. */
          relabsd_device_write_evdev_event
          (
             dev,
@@ -69,16 +98,26 @@ static void convert_input
    }
 }
 
+static int set_signal_handlers ()
+{
+   if (signal(SIGINT, interrupt) == SIG_ERR)
+   {
+      _S_FATAL("Unable to set the SIGINT signal handler.");
+
+      return -1;
+   }
+
+   return 0;
+}
+
 int main (int argc, char ** argv)
 {
    struct relabsd_config conf;
    struct relabsd_input input;
    struct relabsd_device dev;
 
-   if (signal(SIGINT, interrupt) == SIG_ERR)
+   if (set_signal_handlers() < 0)
    {
-      _S_FATAL("Unable to set the SIGINT signal handler.");
-
       return -1;
    }
 

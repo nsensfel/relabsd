@@ -4,7 +4,12 @@
 
 #include "axis.h"
 
-enum relabsd_axis relabsd_axis_name_to_enum (char * const name)
+/*
+ * Implementation note: _IS_PREFIX, as its name implies, is checking for a
+ * prefix, not an equal value. This could cause issues if there were axes
+ * with name prefixed by another axis name.
+ */
+enum relabsd_axis relabsd_axis_name_to_enum (const char * const name)
 {
    if (_IS_PREFIX("X", name))
    {

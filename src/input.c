@@ -8,6 +8,12 @@
 
 #include "input.h"
 
+/*
+ * Ensures that the input device has enabled an given EV_REL axis.
+ *
+ * Returns -1 on (fatal) error,
+ *         0 is the axis is enabled.
+ */
 static int check_for_axis
 (
    const struct libevdev * const dev,
@@ -25,6 +31,12 @@ static int check_for_axis
    return 0;
 }
 
+/*
+ * Ensures that the input defice is at least 6DOF.
+ *
+ * Returns -1 on (fatal) error,
+ *         0 is the device is compatible.
+ */
 static int device_is_compatible (const struct libevdev * const dev)
 {
    if (!libevdev_has_event_type(dev, EV_REL))
@@ -44,6 +56,10 @@ static int device_is_compatible (const struct libevdev * const dev)
       | (check_for_axis(dev, "RZ", REL_RZ) < 0)
    )
    {
+      /*
+       * Note the '|' instead of '||': we want to inform the user of all the
+       * axes we require.
+       */
       return -1;
    }
 
@@ -122,11 +138,15 @@ int relabsd_input_read
          &event
       );
 
-   /*if (rc == LIBEVDEV_READ_STATUS_SYNC)
+   /* TODO: Look into LIBEVDEV_READ_STATUS_SYNC, handle it. */
+   /*
+   if (rc == LIBEVDEV_READ_STATUS_SYNC)
    {
       handle_syn_dropped(input->dev);
    }
-   else*/ if (rc != LIBEVDEV_READ_STATUS_SUCCESS)
+   else
+   */
+   if (rc != LIBEVDEV_READ_STATUS_SUCCESS)
    {
       _WARNING("[INPUT] Could not get next event: %s.", strerror(-rc));
 

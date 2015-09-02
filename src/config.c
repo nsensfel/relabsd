@@ -6,9 +6,30 @@
 #include "axis.h"
 #include "config.h"
 
+/*
+ * "errno is never set to zero by any system call or library function."
+ * This file makes use of this, by setting it to zero and checking if
+ * it was modified after calling an function (I'm guessing this is common
+ * practice, but I think it's worth explaining).
+ * Following the principle of least astonishment, if a function sets errno to
+ * zero, it will not return before setting it back either to its previous
+ * value or to a arbitrary nonzero value.
+ */
+
+/*
+ * Returns -1 on error,
+ *          0 on EOF,
+ *          1 on newline.
+ */
 static int reach_next_line_or_eof (FILE * const f)
 {
+   int prev_errno;
    char c;
+
+   prev_errno = errno;
+
+   errno = 0;
+
    c = getc(f);
 
    while ((c != '\n') && c != EOF)
@@ -16,15 +37,28 @@ static int reach_next_line_or_eof (FILE * const f)
       c = getc(f);
    }
 
-   if (c == EOF)
+   if (errno != 0)
    {
+      errno = prev_errno;
+
       return -1;
    }
 
-   return 0;
+   errno = prev_errno;
+
+   if (c == EOF)
+   {
+      return 0;
+   }
+
+   return 1;
 }
 
-static int all_axis_are_configured (const int * const axis_is_configured)
+/*
+ * Returns -1 on if an axis has not been configured,
+ *          0 otherwise.
+ */
+static int all_axes_are_configured (const int * const axis_is_configured)
 {
    int i;
 
@@ -45,15 +79,21 @@ static int all_axis_are_configured (const int * const axis_is_configured)
    return 0;
 }
 
+/*
+ * Returns -1 on (fatal) error,
+ *          0 on succes.
+ * On failure, 'axis_is_configured' is untouched.
+ * On success, the corresponding 'axis_is_configured' is set to 1.
+ */
 static int parse_axis_configuration_line
 (
    struct relabsd_config * const conf,
    FILE * const f,
    int * const axis_is_configured,
-   char * const buffer
+   const char * const buffer
 )
 {
-   int valc;
+   int valc, prev_errno;
    enum relabsd_axis axis;
 
    axis = relabsd_axis_name_to_enum(buffer);
@@ -69,25 +109,42 @@ static int parse_axis_configuration_line
       return -1;
    }
 
-    valc =
-      fscanf
-      (
-         f,
-         "%d %d %d %d %d",
-         &(conf->axis[axis].min),
-         &(conf->axis[axis].max),
-         &(conf->axis[axis].fuzz),
-         &(conf->axis[axis].flat),
-         &(conf->axis[axis].resolution)
-      );
+   prev_errno = errno;
+   errno = 0;
+
+   valc =
+   fscanf
+   (
+      f,
+      "%d %d %d %d %d",
+      &(conf->axis[axis].min),
+      &(conf->axis[axis].max),
+      &(conf->axis[axis].fuzz),
+      &(conf->axis[axis].flat),
+      &(conf->axis[axis].resolution)
+   );
 
    if (valc == EOF)
    {
-      _FATAL
-      (
-         "[CONFIG] Unexpected end of file while reading axis '%s'.",
-         buffer
-      );
+      if (errno == 0)
+      {
+         _FATAL
+         (
+            "[CONFIG] Unexpected end of file while reading axis '%s'.",
+            buffer
+         );
+      }
+      else
+      {
+         _FATAL
+         (
+            "[CONFIG] An error occured while reading axis '%s': %s.",
+            buffer,
+            strerror(errno)
+         );
+      }
+
+      errno = prev_errno;
 
       return -1;
    }
@@ -99,13 +156,57 @@ static int parse_axis_configuration_line
          buffer
       );
 
+      errno = prev_errno;
+
       return -1;
    }
 
+   errno = prev_errno;
+
    axis_is_configured[axis] = 1;
+
    return 0;
 }
 
+/*
+ * Returns -1 on (fatal) error,
+ *          0 on EOF,
+ *          1 on newline.
+ */
+static int read_config_line
+(
+   struct relabsd_config * const conf,
+   FILE * const f,
+   int * const axis_is_configured,
+   const char * const prefix
+)
+{
+   if (!_IS_PREFIX("#", prefix))
+   {
+      if
+      (
+         parse_axis_configuration_line
+         (
+            conf,
+            f,
+            axis_is_configured,
+            prefix
+         )
+         < 0
+      )
+      {
+         /* Fatal error. */
+         return -1;
+      }
+   }
+
+   return reach_next_line_or_eof(f);
+}
+
+/*
+ * Returns -1 on (fatal) error,
+ *         0 on success.
+ */
 static int read_config_file
 (
    struct relabsd_config * const conf,
@@ -115,11 +216,11 @@ static int read_config_file
    FILE * f;
    int axis_is_configured[6];
    char buffer[3];
-   int test;
+   int continue_reading, prev_errno;
 
    buffer[2] = '\0';
 
-   memset(axis_is_configured, 0, 6 * sizeof(int));
+   memset(axis_is_configured, 0, (6 * sizeof(int)));
 
    f = fopen(filename, "r");
 
@@ -134,43 +235,37 @@ static int read_config_file
       return -1;
    }
 
+   prev_errno = errno;
    errno = 0;
 
-   while ((test = fscanf(f, "%2s", buffer)) > 0)
-   {
-      if (_IS_PREFIX("#", buffer))
-      {
-         if (reach_next_line_or_eof(f) < 0)
-         {
-            break;
-         }
-      }
-      else
-      {
-         if
-         (
-            parse_axis_configuration_line
-            (
-               conf,
-               f,
-               axis_is_configured,
-               buffer
-            )
-            < 0
-         )
-         {
-            break;
-         }
+   continue_reading = 1;
 
-         if (reach_next_line_or_eof(f) < 0)
-         {
+   while ((continue_reading == 1) && (fscanf(f, "%2s", buffer) != EOF))
+   {
+      switch (read_config_line(conf, f, axis_is_configured, buffer))
+      {
+         case 1:
+            /* Everything is going well. */
             break;
-         }
+
+         case 0:
+            /* EOF reached. */
+            continue_reading = 0;
+            break;
+
+         case -1:
+            /* A fatal error occured. */
+            errno = prev_errno;
+
+            fclose(f);
+            return -1;
       }
    }
 
-   if (test < 0 && errno != 0)
+   if (errno != 0)
    {
+      /* An error happened in the while loop condition. */
+
       _FATAL
       (
          "[CONFIG] Error while reading file: %s, last read '%s'.",
@@ -178,14 +273,18 @@ static int read_config_file
          buffer
       );
 
+      errno = prev_errno;
+
       fclose(f);
 
       return -1;
    }
 
+   errno = prev_errno;
+
    fclose(f);
 
-   if (all_axis_are_configured(axis_is_configured) < 0)
+   if (all_axes_are_configured(axis_is_configured) < 0)
    {
       return -1;
    }
@@ -193,11 +292,14 @@ static int read_config_file
    return 0;
 }
 
-int relabsd_config_parse
+/*
+ * Returns -1 on (fatal) error,
+ *          0 on valid usage.
+ */
+static int check_usage
 (
-   struct relabsd_config * const conf,
    int const argc,
-   char ** const argv
+   char * const * const argv
 )
 {
    if ((argc < 3) || (argc > 4))
@@ -208,6 +310,21 @@ int relabsd_config_parse
          argv[0]
       );
 
+      return -1;
+   }
+
+   return 0;
+}
+
+int relabsd_config_parse
+(
+   struct relabsd_config * const conf,
+   int const argc,
+   char * const * const argv
+)
+{
+   if (check_usage(argc, argv) < 0)
+   {
       return -1;
    }
 
@@ -237,6 +354,7 @@ int relabsd_config_allows
    int const value
 )
 {
+   /* TODO */
    return 1;
 };
 

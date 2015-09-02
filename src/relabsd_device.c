@@ -9,11 +9,17 @@
 
 #include "relabsd_device.h"
 
-/* LIBEVDEV_UINPUT_OPEN_MANAGED is not defined on my machine. */
+/*
+   LIBEVDEV_UINPUT_OPEN_MANAGED is not defined on my machines.
+   It is not my place to define it, so I'll avoid the issue by defining my own
+   constant.
+*/
 #ifndef LIBEVDEV_UINPUT_OPEN_MANAGED
-   #warning "libevdev did not define LIBEVDEV_UINPUT_OPEN_MANAGED, "\
-            "using value '-2' instead."
-   #define LIBEVDEV_UINPUT_OPEN_MANAGED -2
+   #pragma message  "[WARNING] libevdev did not define "\
+      "LIBEVDEV_UINPUT_OPEN_MANAGED, using value '-2' instead."
+   #define RELABSD_UINPUT_OPEN_MANAGED -2
+#else
+   #define RELABSD_UINPUT_OPEN_MANAGED LIBEVDEV_UINPUT_OPEN_MANAGED
 #endif
 
 static void replace_rel_axis
@@ -90,7 +96,8 @@ int relabsd_device_create
        libevdev_uinput_create_from_device
        (
          dev->dev,
-         LIBEVDEV_UINPUT_OPEN_MANAGED,
+         /* See top of the file. */
+         RELABSD_UINPUT_OPEN_MANAGED,
          &(dev->uidev)
        )
        < 0
@@ -124,6 +131,7 @@ int relabsd_device_write_evdev_event
    int const value
 )
 {
+   /* OPTIMIZE: Should we really send 'EV_SYN' after every event? */
    if
    (
       (libevdev_uinput_write_event(dev->uidev, type, code, value) == 0)

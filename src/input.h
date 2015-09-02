@@ -9,6 +9,14 @@ struct relabsd_input
    int fd;
 };
 
+/*
+ * Returns -1 on (fatal) error,
+ *         0  on success.
+ *
+ * 'input' does not need to be initialized, as the function will to that for
+ * you (on success).
+ * On success, 'input' will need to be closed.
+ */
 int relabsd_input_open
 (
    struct relabsd_input * const input,
@@ -17,6 +25,14 @@ int relabsd_input_open
 
 void relabsd_input_close (const struct relabsd_input * const input);
 
+/*
+ * Returns -1 on (warning) error,
+ *         0 on successful read.
+ *
+ * The 'input_*' parameters do not need to be initialized, as the function will
+ * do that for you (on success).
+ * Requires 'input' to be open.
+ */
 int relabsd_input_read
 (
    const struct relabsd_input * const input,
