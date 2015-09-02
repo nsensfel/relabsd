@@ -5,39 +5,63 @@
 #include <libevdev/libevdev.h>
 
 #include "error.h"
+#include "axis.h"
+#include "config.h"
 
 #include "input.h"
 
 /*
- * Ensures that the input device has enabled an given EV_REL axis.
+ * Ensures that the input device has enabled the EV_REL axes mentioned
+ * in the configuration file.
  *
  * Returns -1 on (fatal) error,
- *         0 is the axis is enabled.
+ *         0 all configured axes are accounted for.
  */
-static int check_for_axis
+static int check_for_axes
 (
    const struct libevdev * const dev,
-   const char * axis_name,
-   const unsigned int axis_id
+   const struct relabsd_config * const conf
 )
 {
-   if (!libevdev_has_event_code(dev, EV_REL, axis_id))
-   {
-      _FATAL("Input device has no %s axis.", axis_name);
+   int i, device_is_valid;
+   unsigned int rel_code;
 
-      return -1;
+   device_is_valid = 1;
+
+   for (i = RELABSD_VALID_AXES_COUNT; i --> 0;)
+   {
+      if (conf->axis[i].enabled)
+      {
+         rel_code = relabsd_axis_to_rel((enum relabsd_axis) i);
+
+         if (!libevdev_has_event_code(dev, EV_REL, rel_code))
+         {
+            _FATAL
+            (
+               "Input device has no relative %s axis, yet the configuration "
+               "file asks to convert it.",
+               relabsd_axis_to_name((enum relabsd_axis) i)
+            );
+
+            device_is_valid = 0;
+         }
+      }
    }
 
-   return 0;
+   return (device_is_valid - 1);
 }
 
 /*
- * Ensures that the input defice is at least 6DOF.
+ * Ensures that the input device is compatible with the config file.
  *
  * Returns -1 on (fatal) error,
  *         0 is the device is compatible.
  */
-static int device_is_compatible (const struct libevdev * const dev)
+static int device_is_compatible
+(
+   const struct libevdev * const dev,
+   const struct relabsd_config * const conf
+)
 {
    if (!libevdev_has_event_type(dev, EV_REL))
    {
@@ -46,20 +70,8 @@ static int device_is_compatible (const struct libevdev * const dev)
       return -1;
    }
 
-   if
-   (
-      (check_for_axis(dev, "X", REL_X) < 0)
-      | (check_for_axis(dev, "Y", REL_Y) < 0)
-      | (check_for_axis(dev, "Z", REL_Z) < 0)
-      | (check_for_axis(dev, "RX", REL_RX) < 0)
-      | (check_for_axis(dev, "RY", REL_RY) < 0)
-      | (check_for_axis(dev, "RZ", REL_RZ) < 0)
-   )
+   if (check_for_axes(dev, conf) < 0)
    {
-      /*
-       * Note the '|' instead of '||': we want to inform the user of all the
-       * axes we require.
-       */
       return -1;
    }
 
@@ -69,17 +81,17 @@ static int device_is_compatible (const struct libevdev * const dev)
 int relabsd_input_open
 (
    struct relabsd_input * const input,
-   const char * const filename
+   const struct relabsd_config * const conf
 )
 {
-   input->fd = open(filename, O_RDONLY);
+   input->fd = open(conf->input_file, O_RDONLY);
 
    if (input->fd < 0)
    {
       _FATAL
       (
          "Could not open device %s in read only mode:",
-         filename,
+         conf->input_file,
          strerror(errno)
       );
 
@@ -94,7 +106,7 @@ int relabsd_input_open
       _FATAL
       (
          "libevdev could not open %s:",
-         filename,
+         conf->input_file,
          strerror(errno)
       );
 
@@ -103,10 +115,8 @@ int relabsd_input_open
       return -1;
    }
 
-   if (device_is_compatible(input->dev) < 0)
+   if (device_is_compatible(input->dev, conf) < 0)
    {
-      _FATAL("%s is not compatible with relabsd.", filename);
-
       return -1;
    }
 

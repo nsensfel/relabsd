@@ -25,7 +25,7 @@ static void handle_relative_axis_event
    const struct relabsd_device * const dev,
    unsigned int const input_type,
    unsigned int const input_code,
-   int const value
+   int value
 )
 {
    unsigned int abs_code;
@@ -33,27 +33,21 @@ static void handle_relative_axis_event
 
    rad_code = relabsd_axis_convert_evdev_rel(input_code, &abs_code);
 
-   if (rad_code == RELABSD_UNKNOWN)
+   switch (relabsd_config_filter(conf, rad_code, &value))
    {
-      /*
-       * EV_REL events that do not concern an axis that was explicitly
-       * configured are retransmitted as is.
-       */
-      relabsd_device_write_evdev_event
-      (
-         dev,
-         input_type,
-         input_code,
-         value
-      );
-   }
-   else if (relabsd_config_allows(conf, rad_code, value))
-   {
-      /*
-       * This filters out events which are inconsistent with 'conf', such as
-       * values higher than the axis' configured maximum.
-       */
-      relabsd_device_write_evdev_event(dev, EV_ABS, abs_code, value);
+      case -1:
+         /* 'conf' doesn't want the event to be transmitted. */
+         break;
+
+      case 0:
+         /* 'conf' wants the event to be transmitted as is. */
+         relabsd_device_write_evdev_event(dev, input_type, input_code, value);
+         break;
+
+      case 1:
+         /* 'conf' allows the value to be emitted */
+         relabsd_device_write_evdev_event(dev, EV_ABS, abs_code, value);
+         break;
    }
 }
 
@@ -87,13 +81,7 @@ static void convert_input
       else
       {
          /* Any other event is retransmitted as is. */
-         relabsd_device_write_evdev_event
-         (
-            dev,
-            input_type,
-            input_code,
-            value
-         );
+         relabsd_device_write_evdev_event(dev, input_type, input_code, value);
       }
    }
 }
@@ -126,7 +114,7 @@ int main (int argc, char ** argv)
       return -2;
    }
 
-   if (relabsd_input_open(&input, conf.input_file) < 0)
+   if (relabsd_input_open(&input, &conf) < 0)
    {
       return -3;
    }

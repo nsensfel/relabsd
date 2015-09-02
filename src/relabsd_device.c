@@ -22,22 +22,29 @@
    #define RELABSD_UINPUT_OPEN_MANAGED LIBEVDEV_UINPUT_OPEN_MANAGED
 #endif
 
-static void replace_rel_axis
+static void replace_rel_axes
 (
    struct relabsd_device * const dev,
-   const struct relabsd_config * const config,
-   struct input_absinfo * const absinfo,
-   unsigned int rel_code
+   const struct relabsd_config * const config
 )
 {
-   enum relabsd_axis rad_code;
-   unsigned int abs_code;
+   int i;
+   struct input_absinfo absinfo;
+   unsigned int abs_code, rel_code;
 
-   rad_code = relabsd_axis_convert_evdev_rel(rel_code, &abs_code);
+   for (i = RELABSD_VALID_AXES_COUNT; i --> 0;)
+   {
+      if (config->axis[i].enabled)
+      {
+         rel_code = relabsd_axis_to_rel((enum relabsd_axis) i);
+         abs_code = relabsd_axis_to_abs((enum relabsd_axis) i);
 
-   relabsd_config_get_absinfo(config, rad_code, absinfo);
-   libevdev_disable_event_code(dev->dev, EV_REL, rel_code);
-   libevdev_enable_event_code(dev->dev, EV_ABS, abs_code, absinfo);
+         relabsd_config_get_absinfo(config, (enum relabsd_axis) i, &absinfo);
+         libevdev_disable_event_code(dev->dev, EV_REL, rel_code);
+         libevdev_enable_event_code(dev->dev, EV_ABS, abs_code, &absinfo);
+      }
+   }
+
 }
 
 int relabsd_device_create
@@ -46,7 +53,6 @@ int relabsd_device_create
    const struct relabsd_config * const config
 )
 {
-   struct input_absinfo absinfo;
    int fd;
 
    fd = open(config->input_file, O_RDONLY);
@@ -63,10 +69,7 @@ int relabsd_device_create
       return -1;
    }
 
-   if
-   (
-      libevdev_new_from_fd(fd, &(dev->dev)) < 0
-   )
+   if (libevdev_new_from_fd(fd, &(dev->dev)) < 0)
    {
       _FATAL
       (
@@ -84,12 +87,7 @@ int relabsd_device_create
 
    libevdev_enable_event_type(dev->dev, EV_ABS);
 
-   replace_rel_axis(dev, config, &absinfo, REL_X);
-   replace_rel_axis(dev, config, &absinfo, REL_Y);
-   replace_rel_axis(dev, config, &absinfo, REL_Z);
-   replace_rel_axis(dev, config, &absinfo, REL_RX);
-   replace_rel_axis(dev, config, &absinfo, REL_RY);
-   replace_rel_axis(dev, config, &absinfo, REL_RZ);
+   replace_rel_axes(dev, config);
 
    if
    (

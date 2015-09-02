@@ -55,48 +55,20 @@ static int reach_next_line_or_eof (FILE * const f)
 }
 
 /*
- * Returns -1 on if an axis has not been configured,
- *          0 otherwise.
- */
-static int all_axes_are_configured (const int * const axis_is_configured)
-{
-   int i;
-
-   for (i = 0; i < 6; ++i)
-   {
-      if (axis_is_configured[i] == 0)
-      {
-         _FATAL
-         (
-            "[CONFIG] Axis '%s' is not configured.",
-            relabsd_axis_enum_to_name((enum relabsd_axis) i)
-         );
-
-         return -1;
-      }
-   }
-
-   return 0;
-}
-
-/*
  * Returns -1 on (fatal) error,
  *          0 on succes.
- * On failure, 'axis_is_configured' is untouched.
- * On success, the corresponding 'axis_is_configured' is set to 1.
  */
 static int parse_axis_configuration_line
 (
    struct relabsd_config * const conf,
    FILE * const f,
-   int * const axis_is_configured,
    const char * const buffer
 )
 {
    int valc, prev_errno;
    enum relabsd_axis axis;
 
-   axis = relabsd_axis_name_to_enum(buffer);
+   axis = relabsd_axis_from_name(buffer);
 
    if (axis == RELABSD_UNKNOWN)
    {
@@ -163,7 +135,7 @@ static int parse_axis_configuration_line
 
    errno = prev_errno;
 
-   axis_is_configured[axis] = 1;
+   conf->axis[axis].enabled = 1;
 
    return 0;
 }
@@ -177,23 +149,12 @@ static int read_config_line
 (
    struct relabsd_config * const conf,
    FILE * const f,
-   int * const axis_is_configured,
    const char * const prefix
 )
 {
    if (!_IS_PREFIX("#", prefix))
    {
-      if
-      (
-         parse_axis_configuration_line
-         (
-            conf,
-            f,
-            axis_is_configured,
-            prefix
-         )
-         < 0
-      )
+      if (parse_axis_configuration_line(conf, f, prefix) < 0)
       {
          /* Fatal error. */
          return -1;
@@ -214,13 +175,10 @@ static int read_config_file
 )
 {
    FILE * f;
-   int axis_is_configured[6];
    char buffer[3];
    int continue_reading, prev_errno;
 
    buffer[2] = '\0';
-
-   memset(axis_is_configured, 0, (6 * sizeof(int)));
 
    f = fopen(filename, "r");
 
@@ -242,7 +200,7 @@ static int read_config_file
 
    while ((continue_reading == 1) && (fscanf(f, "%2s", buffer) != EOF))
    {
-      switch (read_config_line(conf, f, axis_is_configured, buffer))
+      switch (read_config_line(conf, f, buffer))
       {
          case 1:
             /* Everything is going well. */
@@ -284,11 +242,6 @@ static int read_config_file
 
    fclose(f);
 
-   if (all_axes_are_configured(axis_is_configured) < 0)
-   {
-      return -1;
-   }
-
    return 0;
 }
 
@@ -316,6 +269,16 @@ static int check_usage
    return 0;
 }
 
+static void init_axes_config (struct relabsd_config * const conf)
+{
+   int i;
+
+   for (i = RELABSD_VALID_AXES_COUNT; i --> 0;)
+   {
+      conf->axis[i].enabled = 0;
+   }
+}
+
 int relabsd_config_parse
 (
    struct relabsd_config * const conf,
@@ -339,6 +302,8 @@ int relabsd_config_parse
 
    conf->input_file = argv[1];
 
+   init_axes_config(conf);
+
    if (read_config_file(conf, argv[2]) < 0)
    {
       return -1;
@@ -347,14 +312,29 @@ int relabsd_config_parse
    return 0;
 }
 
-int relabsd_config_allows
+int relabsd_config_filter
 (
    const struct relabsd_config * const conf,
    enum relabsd_axis const axis,
-   int const value
+   int * const value
 )
 {
-   /* TODO */
+   if ((axis == RELABSD_UNKNOWN) || !conf->axis[axis].enabled)
+   {
+      return 0;
+   }
+
+   if (*value < conf->axis[axis].min)
+   {
+      *value = conf->axis[axis].min;
+   }
+   else if (*value > conf->axis[axis].max)
+   {
+      *value = conf->axis[axis].max;
+   }
+
+   /* TODO: handle the other properties. */
+
    return 1;
 };
 

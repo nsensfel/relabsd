@@ -3,6 +3,8 @@
 
 #include <libevdev/libevdev.h>
 
+#include "config.h"
+
 struct relabsd_input
 {
    struct libevdev * dev;
@@ -20,7 +22,7 @@ struct relabsd_input
 int relabsd_input_open
 (
    struct relabsd_input * const input,
-   const char * const filename
+   const struct relabsd_config * const conf
 );
 
 void relabsd_input_close (const struct relabsd_input * const input);

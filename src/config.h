@@ -7,6 +7,7 @@
 
 struct relabsd_config_axis
 {
+   int enabled;
    int min;
    int max;
    int fuzz;
@@ -22,7 +23,7 @@ struct relabsd_config
 {
    const char * input_file;
    const char * device_name;
-   struct relabsd_config_axis axis[6];
+   struct relabsd_config_axis axis[RELABSD_VALID_AXES_COUNT];
 };
 
 /*
@@ -47,14 +48,19 @@ int relabsd_config_parse
  * with our REV_ABS axis configuration, such as the axis' minimum or maximum
  * values.
  *
- * Returns 1 if 'conf' allows the axis to have this value,
- *         0 otherwise.
+ * Returns 1 if 'conf' allows the value to be emitted,
+ *         0 if 'conf' wants the event to be transmitted as is.
+ *         -1 if 'conf' doesn't want the event to be transmitted.
+ *
+ * If the return value is 0, this function will not have altered the value at
+ * 'value'. Otherwise, this function can have altered it to match its
+ * requierements.
  */
-int relabsd_config_allows
+int relabsd_config_filter
 (
    const struct relabsd_config * const conf,
    enum relabsd_axis const axis,
-   int const value
+   int * const value
 );
 
 /*
