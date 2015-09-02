@@ -26,3 +26,43 @@ $ cmake ..
 ```
 # ./relabsd /dev/input/spacenavigator ../conf/space_navigator.conf
 ```
+### Results
+(Using [Grumper's sdl-jstest](https://github.com/Grumbel/sdl-jstest))
+
+**SDL 1:**
+```
+$ ./sdl-jstest --list
+Found 1 joystick(s)
+
+Joystick Name:     'relabsd device'
+Joystick Number:    0
+Number of Axes:     6
+Number of Buttons:  2
+Number of Hats:     0
+Number of Balls:    0
+```
+**SDL 2:**
+```
+$ ./sdl2-jstest --list
+Found 2 joystick(s)
+
+Joystick Name:     '3Dconnexion SpaceNavigator'
+Joystick GUID:     030000006d04000026c6000011010000
+Joystick Number:    0
+Number of Axes:     0
+Number of Buttons:  2
+Number of Hats:     0
+Number of Balls:    1
+GameController:
+  not a gamepad
+
+Joystick Name:     'relabsd device'
+Joystick GUID:     030000006d04000026c6000011010000
+Joystick Number:    1
+Number of Axes:     6
+Number of Buttons:  2
+Number of Hats:     0
+Number of Balls:    0
+GameController:
+  not a gamepad
+```
