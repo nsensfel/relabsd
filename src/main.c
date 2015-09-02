@@ -12,7 +12,7 @@
 
 static int RELABSD_RUN = 1;
 
-static void interrupt (int signal_id)
+static void interrupt (int unused_mandatory_parameter)
 {
    RELABSD_RUN = 0;
 
@@ -58,7 +58,7 @@ static void convert_input
    const struct relabsd_device * const dev
 )
 {
-   unsigned int input_type, input_code, abs_code;
+   unsigned int input_type, input_code;
    int value;
 
    while (RELABSD_RUN == 1)

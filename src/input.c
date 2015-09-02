@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <libevdev/libevdev.h>
 
@@ -90,7 +91,7 @@ int relabsd_input_open
    {
       _FATAL
       (
-         "Could not open device %s in read only mode:",
+         "Could not open device '%s' in read only mode: %s.",
          conf->input_file,
          strerror(errno)
       );
@@ -105,7 +106,7 @@ int relabsd_input_open
    {
       _FATAL
       (
-         "libevdev could not open %s:",
+         "libevdev could not open '%s': %s.",
          conf->input_file,
          strerror(errno)
       );

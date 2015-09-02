@@ -78,7 +78,14 @@ char * relabsd_axis_to_name (enum relabsd_axis const e)
 
       case RELABSD_UNKNOWN:
          return "??";
+
+      default:
+         break;
    }
+
+   _S_PROG_ERROR("relabsd_axis_to_name is missing at least 1 case.");
+
+   return "..";
 }
 
 enum relabsd_axis relabsd_axis_convert_evdev_rel
@@ -157,7 +164,14 @@ unsigned int relabsd_axis_to_rel (enum relabsd_axis const e)
       case RELABSD_UNKNOWN:
          _S_PROG_ERROR("relabsd_axis_to_rel(RELABSD_UNKNOWN) is forbidden.");
          return REL_MAX;
+
+      default:
+         break;
    }
+
+   _S_PROG_ERROR("relabsd_axis_to_rel is missing at least 1 case.");
+
+   return REL_MAX;
 }
 
 unsigned int relabsd_axis_to_abs (enum relabsd_axis const e)
@@ -191,7 +205,14 @@ unsigned int relabsd_axis_to_abs (enum relabsd_axis const e)
       case RELABSD_UNKNOWN:
          _S_PROG_ERROR("relabsd_axis_to_abs(RELABSD_UNKNOWN) is forbidden.");
          return ABS_MAX;
+
+      default:
+         break;
    }
+
+   _S_PROG_ERROR("relabsd_axis_to_rel is missing at least 1 case.");
+
+   return REL_MAX;
 }
 
 /*

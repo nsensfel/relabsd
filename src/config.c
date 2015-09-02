@@ -336,7 +336,7 @@ int relabsd_config_filter
    /* TODO: handle the other properties. */
 
    return 1;
-};
+}
 
 void relabsd_config_get_absinfo
 (

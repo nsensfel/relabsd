@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <libevdev/libevdev-uinput.h>
+
 #include "error.h"
 #include "axis.h"
 #include "config.h"
@@ -61,7 +63,7 @@ int relabsd_device_create
    {
       _FATAL
       (
-         "Could not open device %s in read only mode:",
+         "Could not open device '%s' in read only mode: %s.",
          config->input_file,
          strerror(errno)
       );
@@ -73,7 +75,7 @@ int relabsd_device_create
    {
       _FATAL
       (
-         "libevdev could not open %s:",
+         "libevdev could not open '%s': '%s'.",
          config->input_file,
          strerror(errno)
       );
