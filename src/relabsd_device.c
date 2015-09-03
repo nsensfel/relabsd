@@ -2,6 +2,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include <libevdev/libevdev-uinput.h>
 
@@ -49,6 +51,87 @@ static void replace_rel_axes
 
 }
 
+static int rename_device
+(
+   struct libevdev * const dev,
+   const struct relabsd_config * const config
+)
+{
+   size_t new_name_size;
+   char * new_name;
+   const char * real_name;
+
+   /* +2: One for the \0, one for the space between prefix and 'real_name'. */
+   new_name_size = strlen(RELABSD_DEVICE_PREFIX) + 2;
+
+   if (config->device_name == (char *) NULL)
+   {
+      /* XXX
+       * "The name is never NULL but it may be the empty string."
+       * I'm assuming that since they use the term 'string', it is \0
+       * terminated.
+       */
+      real_name = libevdev_get_name(dev);
+   }
+   else
+   {
+      real_name = config->device_name;
+   }
+
+   new_name_size += strlen(real_name);
+
+   new_name = (char *) calloc(new_name_size, sizeof(char));
+
+   if (new_name == (char *) NULL)
+   {
+      RELABSD_ERROR
+      (
+         "Attempt at allocating memory to create the virtual device's name "
+         "failed: %s.",
+         strerror(errno)
+      );
+
+      /* This frees whatever came from 'libevdev_get_name'. */
+      libevdev_set_name(dev, RELABSD_DEVICE_PREFIX);
+
+      return -1;
+   }
+
+   if
+   (
+      snprintf
+      (
+         new_name,
+         new_name_size,
+         "%s %s",
+         RELABSD_DEVICE_PREFIX,
+         real_name
+      )
+      != ((int) (new_name_size - 1))
+   )
+   {
+      /* This makes for a great message when strerror(errno) returns SUCCESS. */
+      RELABSD_ERROR
+      (
+         "Something unexpected happened while renaming the virtual device: %s.",
+         strerror(errno)
+      );
+
+      /* This frees whatever came from 'libevdev_get_name'. */
+      libevdev_set_name(dev, RELABSD_DEVICE_PREFIX);
+
+      free((void *) new_name);
+
+      return -1;
+   }
+
+   /* This frees whatever came from 'libevdev_get_name'. */
+   libevdev_set_name(dev, new_name);
+   free((void *) new_name);
+
+   return 0;
+}
+
 int relabsd_device_create
 (
    struct relabsd_device * const dev,
@@ -85,7 +168,13 @@ int relabsd_device_create
       return -1;
    }
 
-   libevdev_set_name(dev->dev, config->device_name);
+   if (rename_device(dev->dev, config) < 0)
+   {
+      libevdev_free(dev->dev);
+      close(fd);
+
+      return -1;
+   }
 
    libevdev_enable_event_type(dev->dev, EV_ABS);
 

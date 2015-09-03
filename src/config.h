@@ -5,10 +5,25 @@
 
 #include "axis.h"
 
+/* Number of options that can be configured. */
+#define RELABSD_OPTIONS_COUNT 3
+
+enum relabsd_option
+{
+   RELABSD_DIRECT_OPTION,
+   RELABSD_REAL_FUZZ_OPTION,
+   RELABSD_FRAMED_OPTION
+};
+
+
 struct relabsd_config_axis
 {
+/* relabsd axis properties */
    int enabled;
    int previous_value;
+   int option[RELABSD_OPTIONS_COUNT];
+
+/* Absolute axis properties */
    int min;
    int max;
    int fuzz;

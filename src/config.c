@@ -2,12 +2,16 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "error.h"
 #include "pervasive.h"
 #include "axis.h"
 #include "config.h"
 
+#ifndef RELABSD_OPTION_MAX_SIZE
+   #define RELABSD_OPTION_MAX_SIZE 64
+#endif
 /*
  * "errno is never set to zero by any system call or library function."
  * This file makes use of this, by setting it to zero and checking if
@@ -19,7 +23,7 @@
  */
 
 /*
- * Returns -1 on error,
+ * Returns -1 on (fatal) error,
  *          0 on EOF,
  *          1 on newline.
  */
@@ -32,15 +36,21 @@ static int reach_next_line_or_eof (FILE * const f)
 
    errno = 0;
 
-   c = getc(f);
+   c = (char) getc(f);
 
    while ((c != '\n') && c != EOF)
    {
-      c = getc(f);
+      c = (char) getc(f);
    }
 
    if (errno != 0)
    {
+      RELABSD_FATAL
+      (
+         "[CONFIG] Error while attempting to reach EOF or next line: %s.",
+         strerror(errno)
+      );
+
       errno = prev_errno;
 
       return -1;
@@ -54,6 +64,141 @@ static int reach_next_line_or_eof (FILE * const f)
    }
 
    return 1;
+}
+
+/*
+ * Returns -1 if the option was discarded (an error has been reported),
+ *         0 if the option was successfully parsed.
+ *
+ * ('length' - 1) is the number of relevant characters in 'name'.
+ * 'name' must support 'length' characters.
+ * name[length] will be set to \0, so it does not need to be when calling
+ * this function.
+ */
+static int parse_option
+(
+   struct relabsd_config * const conf,
+   enum relabsd_axis const axis,
+   char * const name,
+   int const length
+)
+{
+   name[length] = '\0';
+
+   if (strcmp(name, "direct") == 0)
+   {
+      conf->axis[axis].option[RELABSD_DIRECT_OPTION] = 1;
+   }
+   else if (strcmp(name, "real_fuzz") == 0)
+   {
+      conf->axis[axis].option[RELABSD_REAL_FUZZ_OPTION] = 1;
+   }
+   else if (strcmp(name, "framed") == 0)
+   {
+      conf->axis[axis].option[RELABSD_FRAMED_OPTION] = 1;
+   }
+   else
+   {
+      RELABSD_ERROR
+      (
+         "[CONFIG] Unknown option '%s' for axis '%s'.",
+         name,
+         relabsd_axis_to_name(axis)
+      );
+
+      return -1;
+   }
+
+   return 0;
+}
+
+/*
+ * Returns -1 on error,
+ *          0 on EOF,
+ *          1 on newline.
+ */
+static int read_axis_options
+(
+   struct relabsd_config * const conf,
+   FILE * const f,
+   enum relabsd_axis const axis
+)
+{
+   char option[(RELABSD_OPTION_MAX_SIZE + 1)];
+   int i, prev_errno;
+   char c;
+
+   option[RELABSD_OPTION_MAX_SIZE] = '\0';
+
+   prev_errno = errno;
+
+   errno = 0;
+
+   memset(conf->axis[axis].option, 0, RELABSD_OPTIONS_COUNT * sizeof(int));
+
+   i = 0;
+
+   while (i <= RELABSD_OPTION_MAX_SIZE)
+   {
+      c = (char) getc(f);
+
+      if ((errno != 0) && (c == EOF))
+      {
+         RELABSD_FATAL
+         (
+            "[CONFIG] Reading error while parsing option name (axis '%s'): %s.",
+            relabsd_axis_to_name(axis),
+            strerror(errno)
+         );
+
+         errno = prev_errno;
+
+         return -1;
+      }
+
+      switch (c)
+      {
+         case ' ':
+         case '\t':
+            break;
+
+         case ',':
+            /* We parsed a new option and there is a least another. */
+            parse_option(conf, axis, option, i);
+
+            i = 0;
+
+            break;
+
+         case '\n':
+            parse_option(conf, axis, option, i);
+            errno = prev_errno;
+
+            return 1;
+
+         case EOF:
+            parse_option(conf, axis, option, i);
+            errno = prev_errno;
+
+            return 0;
+
+         default:
+            option[i] = c;
+            i++;
+
+            break;
+      }
+   }
+
+   RELABSD_FATAL
+   (
+      "[CONFIG] Option name '%s[...]' (axis '%s') is too long (%d chars max).",
+      option,
+      relabsd_axis_to_name(axis),
+      RELABSD_OPTION_MAX_SIZE
+   );
+
+   return -1;
 }
 
 /*
@@ -140,7 +285,7 @@ static int parse_axis_configuration_line
    conf->axis[axis].enabled = 1;
    conf->axis[axis].previous_value = 0;
 
-   return 0;
+   return read_axis_options(conf, f, axis);
 }
 
 /*
@@ -157,11 +302,7 @@ static int read_config_line
 {
    if (!RELABSD_IS_PREFIX("#", prefix))
    {
-      if (parse_axis_configuration_line(conf, f, prefix) < 0)
-      {
-         /* Fatal error. */
-         return -1;
-      }
+      return parse_axis_configuration_line(conf, f, prefix);
    }
 
    return reach_next_line_or_eof(f);
@@ -295,7 +436,7 @@ int relabsd_config_parse
 
    if (argc == 3)
    {
-      conf->device_name = "relabsd device";
+      conf->device_name = NULL;
    }
    else
    {
@@ -314,6 +455,106 @@ int relabsd_config_parse
    return 0;
 }
 
+static int direct_filter
+(
+   struct relabsd_config_axis * const axis,
+   int * const value
+)
+{
+   if (abs(*value - axis->previous_value) <= axis->fuzz)
+   {
+      if (axis->option[RELABSD_REAL_FUZZ_OPTION])
+      {
+         axis->previous_value = *value;
+      }
+
+      return -1;
+   }
+
+   if (*value < axis->min)
+   {
+      *value = axis->min;
+   }
+   else if (*value > axis->max)
+   {
+      *value = axis->max;
+   }
+   else if (abs(*value) <= axis->flat)
+   {
+      *value = 0;
+   }
+
+   if (*value == axis->previous_value)
+   {
+      return -1;
+   }
+
+   axis->previous_value = *value;
+
+   return 1;
+}
+
+static int rel_to_abs_filter
+(
+   struct relabsd_config_axis * const axis,
+   int * const value
+)
+{
+   long int guard;
+
+   guard = (((long int) axis->previous_value) + ((long int) *value));
+
+   if (guard < ((long int) INT_MIN))
+   {
+      guard = ((long int) INT_MIN);
+   }
+   else if (guard > ((long int) INT_MAX))
+   {
+      guard = ((long int) INT_MAX);
+   }
+
+   *value = (int) guard;
+
+   if (axis->option[RELABSD_FRAMED_OPTION])
+   {
+      if (*value < axis->min)
+      {
+         *value = axis->min;
+      }
+      else if (*value > axis->max)
+      {
+         *value = axis->max;
+      }
+
+      if (*value == axis->previous_value)
+      {
+         return 0;
+      }
+
+      axis->previous_value = *value;
+
+      return 1;
+   }
+   else
+   {
+      if (*value == axis->previous_value)
+      {
+         return 0;
+      }
+
+      axis->previous_value = *value;
+
+      if ((*value < axis->min) || (*value > axis->max))
+      {
+         return 0;
+      }
+      else
+      {
+         return 1;
+      }
+   }
+}
+
 int relabsd_config_filter
 (
    struct relabsd_config * const conf,
@@ -326,38 +567,16 @@ int relabsd_config_filter
       return 0;
    }
 
-   if (abs(*value - conf->axis[axis].previous_value) <= conf->axis[axis].fuzz)
-   {
-#ifdef RELABSD_REAL_FUZZ
-      conf->axis[axis].previous_value = *value;
-#endif
-
-      return -1;
-   }
-
-   if (*value < conf->axis[axis].min)
-   {
-      *value = conf->axis[axis].min;
-   }
-   else if (*value > conf->axis[axis].max)
-   {
-      *value = conf->axis[axis].max;
-   }
-   else if (abs(*value) <= conf->axis[axis].flat)
-   {
-      *value = 0;
-
-      /*
-       * As long as the 'fuzz' test is done prior the 'flat' one, moving around
-       * in the 'flat' zone won't trigger useless '0' value events.
-       */
-   }
-
    /* TODO: handle conf->axis[axis].resolution */
 
-   conf->axis[axis].previous_value = *value;
-
-   return 1;
+   if (conf->axis[axis].option[RELABSD_DIRECT_OPTION])
+   {
+      return direct_filter((conf->axis + axis), value);
+   }
+   else
+   {
+      return rel_to_abs_filter((conf->axis + axis), value);
+   }
 }
 
 void relabsd_config_get_absinfo

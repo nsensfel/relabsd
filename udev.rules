@@ -1,0 +1,1 @@
+SUBSYSTEM=="input", ATTRS{name}=="relabsd:*", ENV{ID_INPUT_JOYSTICK}="1", ENV{ID_CLASS}="joystick" 

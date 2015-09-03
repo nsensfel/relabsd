@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+# 3.0 introduces line continuation.
 
 project("relabsd")
 
@@ -66,10 +67,37 @@ else ()
 endif (RELABSD_ENABLE_ERROR_LOCATION)
 
 
-option(RELABSD_REAL_FUZZ "Fuzz is relative to the real device's events." ON)
-if (RELABSD_REAL_FUZZ)
-   target_compile_definitions(relabsd PUBLIC RELABSD_REAL_FUZZ)
-   message(STATUS "[OPTION] Fuzz is relative to the real device's events.")
-else ()
-   message(STATUS "[OPTION] Fuzz is relative to the emulated device's events.")
-endif (RELABSD_REAL_FUZZ)
+set(
+   RELABSD_OPTION_MAX_SIZE
+   "64"
+   CACHE
+   INTEGER
+   "Maximum number of characters in an axis option (name + params)."
+)
+target_compile_definitions(
+   relabsd
+   PUBLIC
+   "-DRELABSD_OPTION_MAX_SIZE=${RELABSD_OPTION_MAX_SIZE}"
+)
+message(
+   STATUS
+   "[OPTION] Axis options can contain up to ${RELABSD_OPTION_MAX_SIZE}\
+ characters (name + params)."
+)
+
+set(
+   RELABSD_DEVICE_PREFIX
+   "relabsd:"
+   CACHE
+   STRING
+   "String prefixing the name of the virtual device."
+)
+target_compile_definitions(
+   relabsd
+   PUBLIC
+   "-DRELABSD_DEVICE_PREFIX=\"${RELABSD_DEVICE_PREFIX}\""
+)
+message(
+   STATUS
+   "[OPTION] Virtual devices' names are prefixed by '${RELABSD_DEVICE_PREFIX}'."
+)
