@@ -21,7 +21,7 @@ static void interrupt (int unused_mandatory_parameter)
 
 static void handle_relative_axis_event
 (
-   const struct relabsd_config * const conf,
+   struct relabsd_config * const conf,
    const struct relabsd_device * const dev,
    unsigned int const input_type,
    unsigned int const input_code,
@@ -53,7 +53,7 @@ static void handle_relative_axis_event
 
 static void convert_input
 (
-   const struct relabsd_config * const conf,
+   struct relabsd_config * const conf,
    const struct relabsd_input * const input,
    const struct relabsd_device * const dev
 )

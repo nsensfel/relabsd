@@ -8,6 +8,7 @@
 struct relabsd_config_axis
 {
    int enabled;
+   int previous_value;
    int min;
    int max;
    int fuzz;
@@ -54,11 +55,13 @@ int relabsd_config_parse
  *
  * If the return value is 0, this function will not have altered the value at
  * 'value'. Otherwise, this function can have altered it to match its
- * requierements.
+ * requirements.
+ * If the return value is either 0 or -1, the 'previous_value' of the axis
+ * has been updated.
  */
 int relabsd_config_filter
 (
-   const struct relabsd_config * const conf,
+   struct relabsd_config * const conf,
    enum relabsd_axis const axis,
    int * const value
 );

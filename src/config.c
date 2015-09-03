@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "error.h"
 #include "pervasive.h"
@@ -136,6 +137,7 @@ static int parse_axis_configuration_line
    errno = prev_errno;
 
    conf->axis[axis].enabled = 1;
+   conf->axis[axis].previous_value = 0;
 
    return 0;
 }
@@ -314,7 +316,7 @@ int relabsd_config_parse
 
 int relabsd_config_filter
 (
-   const struct relabsd_config * const conf,
+   struct relabsd_config * const conf,
    enum relabsd_axis const axis,
    int * const value
 )
@@ -322,6 +324,13 @@ int relabsd_config_filter
    if ((axis == RELABSD_UNKNOWN) || !conf->axis[axis].enabled)
    {
       return 0;
+   }
+
+   if (abs(*value - conf->axis[axis].previous_value) <= conf->axis[axis].fuzz)
+   {
+      conf->axis[axis].previous_value = *value;
+
+      return -1;
    }
 
    if (*value < conf->axis[axis].min)
@@ -332,8 +341,19 @@ int relabsd_config_filter
    {
       *value = conf->axis[axis].max;
    }
+   else if (abs(*value) <= conf->axis[axis].flat)
+   {
+      *value = 0;
 
-   /* TODO: handle the other properties. */
+      /*
+       * As long as the 'fuzz' test is done prior the 'flat' one, moving around
+       * in the 'flat' zone won't trigger useless '0' value events.
+       */
+   }
+
+   /* TODO: handle conf->axis[axis].resolution */
+
+   conf->axis[axis].previous_value = *value;
 
    return 1;
 }
