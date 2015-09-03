@@ -16,7 +16,7 @@ static void interrupt (int unused_mandatory_parameter)
 {
    RELABSD_RUN = 0;
 
-   _S_WARNING("Interrupted, will exit at the next input device event.");
+   RELABSD_S_WARNING("Interrupted, will exit at the next input device event.");
 }
 
 static void handle_relative_axis_event
@@ -90,7 +90,7 @@ static int set_signal_handlers ()
 {
    if (signal(SIGINT, interrupt) == SIG_ERR)
    {
-      _S_FATAL("Unable to set the SIGINT signal handler.");
+      RELABSD_S_FATAL("Unable to set the SIGINT signal handler.");
 
       return -1;
    }
@@ -124,11 +124,11 @@ int main (int argc, char ** argv)
       return -4;
    }
 
-   _S_DEBUG(10, "Converting inputs...");
+   RELABSD_S_DEBUG(10, "Converting inputs...");
 
    convert_input(&conf, &input, &dev);
 
-   _S_DEBUG(10, "Terminating...");
+   RELABSD_S_DEBUG(10, "Terminating...");
 
    relabsd_device_destroy(&dev);
    relabsd_input_close(&input);

@@ -61,7 +61,7 @@ int relabsd_device_create
 
    if (fd < 0)
    {
-      _FATAL
+      RELABSD_FATAL
       (
          "Could not open device '%s' in read only mode: %s.",
          config->input_file,
@@ -73,7 +73,7 @@ int relabsd_device_create
 
    if (libevdev_new_from_fd(fd, &(dev->dev)) < 0)
    {
-      _FATAL
+      RELABSD_FATAL
       (
          "libevdev could not open '%s': '%s'.",
          config->input_file,
@@ -103,7 +103,7 @@ int relabsd_device_create
        < 0
    )
    {
-      _FATAL("Could not create relabsd device: %s.", strerror(errno));
+      RELABSD_FATAL("Could not create relabsd device: %s.", strerror(errno));
 
       libevdev_free(dev->dev);
 

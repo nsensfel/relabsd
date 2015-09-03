@@ -6,41 +6,41 @@
 #include "error.h"
 
 /*
- * Implementation note: _IS_PREFIX, as its name implies, is checking for a
+ * Implementation note: RELABSD_IS_PREFIX, as its name implies, is checking for a
  * prefix, not an equal value. This could cause issues if there were axes
  * with name prefixed by another axis name.
  */
 enum relabsd_axis relabsd_axis_from_name (const char * const name)
 {
-   if (_IS_PREFIX("X", name))
+   if (RELABSD_IS_PREFIX("X", name))
    {
       return RELABSD_X;
    }
-   else if (_IS_PREFIX("Y", name))
+   else if (RELABSD_IS_PREFIX("Y", name))
    {
       return RELABSD_Y;
    }
-   else if (_IS_PREFIX("Z", name))
+   else if (RELABSD_IS_PREFIX("Z", name))
    {
       return RELABSD_Z;
    }
-   else if (_IS_PREFIX("RX", name))
+   else if (RELABSD_IS_PREFIX("RX", name))
    {
       return RELABSD_RX;
    }
-   else if (_IS_PREFIX("RY", name))
+   else if (RELABSD_IS_PREFIX("RY", name))
    {
       return RELABSD_RY;
    }
-   else if (_IS_PREFIX("RZ", name))
+   else if (RELABSD_IS_PREFIX("RZ", name))
    {
       return RELABSD_RZ;
    }
-   else if (_IS_PREFIX("WL", name))
+   else if (RELABSD_IS_PREFIX("WL", name))
    {
       return RELABSD_WHEEL;
    }
-   else if (_IS_PREFIX("MC", name))
+   else if (RELABSD_IS_PREFIX("MC", name))
    {
       return RELABSD_MISC;
    }
@@ -83,7 +83,7 @@ char * relabsd_axis_to_name (enum relabsd_axis const e)
          break;
    }
 
-   _S_PROG_ERROR("relabsd_axis_to_name is missing at least 1 case.");
+   RELABSD_S_PROG_ERROR("relabsd_axis_to_name is missing at least 1 case.");
 
    return "..";
 }
@@ -162,14 +162,17 @@ unsigned int relabsd_axis_to_rel (enum relabsd_axis const e)
          return REL_MISC;
 
       case RELABSD_UNKNOWN:
-         _S_PROG_ERROR("relabsd_axis_to_rel(RELABSD_UNKNOWN) is forbidden.");
+         RELABSD_S_PROG_ERROR
+         (
+            "relabsd_axis_to_rel(RELABSD_UNKNOWN) is forbidden."
+         );
          return REL_MAX;
 
       default:
          break;
    }
 
-   _S_PROG_ERROR("relabsd_axis_to_rel is missing at least 1 case.");
+   RELABSD_S_PROG_ERROR("relabsd_axis_to_rel is missing at least 1 case.");
 
    return REL_MAX;
 }
@@ -203,14 +206,17 @@ unsigned int relabsd_axis_to_abs (enum relabsd_axis const e)
          return ABS_MISC;
 
       case RELABSD_UNKNOWN:
-         _S_PROG_ERROR("relabsd_axis_to_abs(RELABSD_UNKNOWN) is forbidden.");
+         RELABSD_S_PROG_ERROR
+         (
+            "relabsd_axis_to_abs(RELABSD_UNKNOWN) is forbidden."
+         );
          return ABS_MAX;
 
       default:
          break;
    }
 
-   _S_PROG_ERROR("relabsd_axis_to_rel is missing at least 1 case.");
+   RELABSD_S_PROG_ERROR("relabsd_axis_to_abs is missing at least 1 case.");
 
    return REL_MAX;
 }

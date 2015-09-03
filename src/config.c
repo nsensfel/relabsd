@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "error.h"
@@ -73,7 +74,7 @@ static int parse_axis_configuration_line
 
    if (axis == RELABSD_UNKNOWN)
    {
-      _FATAL
+      RELABSD_FATAL
       (
          "[CONFIG] Unknown axis '%s'.",
          buffer
@@ -101,7 +102,7 @@ static int parse_axis_configuration_line
    {
       if (errno == 0)
       {
-         _FATAL
+         RELABSD_FATAL
          (
             "[CONFIG] Unexpected end of file while reading axis '%s'.",
             buffer
@@ -109,7 +110,7 @@ static int parse_axis_configuration_line
       }
       else
       {
-         _FATAL
+         RELABSD_FATAL
          (
             "[CONFIG] An error occured while reading axis '%s': %s.",
             buffer,
@@ -123,7 +124,7 @@ static int parse_axis_configuration_line
    }
    else if (valc < 5)
    {
-      _FATAL
+      RELABSD_FATAL
       (
          "[CONFIG] Invalid parameter count for axis '%s'.",
          buffer
@@ -154,7 +155,7 @@ static int read_config_line
    const char * const prefix
 )
 {
-   if (!_IS_PREFIX("#", prefix))
+   if (!RELABSD_IS_PREFIX("#", prefix))
    {
       if (parse_axis_configuration_line(conf, f, prefix) < 0)
       {
@@ -186,7 +187,7 @@ static int read_config_file
 
    if (f == (FILE *) NULL)
    {
-      _FATAL
+      RELABSD_FATAL
       (
          "[CONFIG] Could not open file: %s.",
          strerror(errno)
@@ -225,8 +226,7 @@ static int read_config_file
    if (errno != 0)
    {
       /* An error happened in the while loop condition. */
-
-      _FATAL
+      RELABSD_FATAL
       (
          "[CONFIG] Error while reading file: %s, last read '%s'.",
          strerror(errno),
@@ -259,7 +259,7 @@ static int check_usage
 {
    if ((argc < 3) || (argc > 4))
    {
-      _FATAL
+      RELABSD_FATAL
       (
          "Usage: %s input_device config_file [<relabsd_device_name>]",
          argv[0]
@@ -328,7 +328,9 @@ int relabsd_config_filter
 
    if (abs(*value - conf->axis[axis].previous_value) <= conf->axis[axis].fuzz)
    {
+#ifdef RELABSD_REAL_FUZZ
       conf->axis[axis].previous_value = *value;
+#endif
 
       return -1;
    }

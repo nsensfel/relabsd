@@ -37,7 +37,7 @@ static int check_for_axes
 
          if (!libevdev_has_event_code(dev, EV_REL, rel_code))
          {
-            _FATAL
+            RELABSD_FATAL
             (
                "Input device has no relative %s axis, yet the configuration "
                "file asks to convert it.",
@@ -66,7 +66,7 @@ static int device_is_compatible
 {
    if (!libevdev_has_event_type(dev, EV_REL))
    {
-      _S_FATAL("Input device has no relative axis.");
+      RELABSD_S_FATAL("Input device has no relative axis.");
 
       return -1;
    }
@@ -89,7 +89,7 @@ int relabsd_input_open
 
    if (input->fd < 0)
    {
-      _FATAL
+      RELABSD_FATAL
       (
          "Could not open device '%s' in read only mode: %s.",
          conf->input_file,
@@ -104,7 +104,7 @@ int relabsd_input_open
       libevdev_new_from_fd(input->fd, &(input->dev)) < 0
    )
    {
-      _FATAL
+      RELABSD_FATAL
       (
          "libevdev could not open '%s': %s.",
          conf->input_file,
@@ -159,12 +159,12 @@ int relabsd_input_read
    */
    if (rc != LIBEVDEV_READ_STATUS_SUCCESS)
    {
-      _WARNING("[INPUT] Could not get next event: %s.", strerror(-rc));
+      RELABSD_WARNING("[INPUT] Could not get next event: %s.", strerror(-rc));
 
       return -1;
    }
 
-   _DEBUG
+   RELABSD_DEBUG
    (
       90,
       "[INPUT] Valid event received: {type = %s; code = %s; value = %d}.",

@@ -6,117 +6,122 @@
 #include "config.h"
 #include "pervasive.h"
 
-#define _HIGHEST_DEBUG_LVL 100
 
-#define _DEBUG_LVL                           0 /*_HIGHEST_DEBUG_LVL*/
-#define _ENABLE_WARNINGS_OUTPUT              1
-#define _ENABLE_RUNTIME_ERRORS_OUTPUT        1
-#define _ENABLE_PROGRAMMING_ERRORS_OUTPUT    1
-#define _ENABLE_FATAL_ERROR_OUTPUT           1
-#define _ENABLE_ERROR_LOCATION               0
-
-#if _ENABLE_ERROR_LOCATION
-   #define _LOCATION "[" __FILE__ "][" _TO_STRING(__LINE__) "]"
-#else
-   #define _LOCATION ""
+#ifndef RELABSD_HIGHEST_DEBUG_LVL
+   #define RELABSD_HIGHEST_DEBUG_LVL         100
 #endif
 
-#define _PRINT_STDERR(symbol, str, ...)\
-   fprintf(stderr, "[" symbol "]" _LOCATION " " str "\n", __VA_ARGS__);
+#ifndef RELABSD_DEBUG_LEVEL
+   #define RELABSD_DEBUG_LVL                 0
+#endif
 
-#define _DEBUG(level, str, ...)\
-   _ISOLATE\
+#define RELABSD_ENABLE_WARNINGS_OUTPUT              1
+#define RELABSD_ENABLE_RUNTIME_ERRORS_OUTPUT        1
+#define RELABSD_ENABLE_PROGRAMMING_ERRORS_OUTPUT    1
+#define RELABSD_ENABLE_FATAL_ERROR_OUTPUT           1
+
+#ifdef RELABSD_ENABLE_ERROR_LOCATION
+   #define RELABSD_LOCATION "[" __FILE__ "][" RELABSD_TO_STRING(__LINE__) "]"
+#else
+   #define RELABSD_LOCATION ""
+#endif
+
+#define RELABSD_PRINT_STDERR(symbol, str, ...)\
+   fprintf(stderr, "[" symbol "]" RELABSD_LOCATION " " str "\n", __VA_ARGS__);
+
+#define RELABSD_DEBUG(level, str, ...)\
+   RELABSD_ISOLATE\
    (\
-      if (level < _DEBUG_LVL)\
+      if (level < RELABSD_DEBUG_LVL)\
       {\
-         _PRINT_STDERR("D", str, __VA_ARGS__);\
+         RELABSD_PRINT_STDERR("D", str, __VA_ARGS__);\
       }\
    )
 
 
-#define _WARNING(str, ...)\
-   _ISOLATE\
+#define RELABSD_WARNING(str, ...)\
+   RELABSD_ISOLATE\
    (\
-      if (_ENABLE_WARNINGS_OUTPUT)\
+      if (RELABSD_ENABLE_WARNINGS_OUTPUT)\
       {\
-         _PRINT_STDERR("W", str, __VA_ARGS__);\
+         RELABSD_PRINT_STDERR("W", str, __VA_ARGS__);\
       }\
    )
 
-#define _ERROR(str, ...)\
-   _ISOLATE\
+#define RELABSD_ERROR(str, ...)\
+   RELABSD_ISOLATE\
    (\
-      if (_ENABLE_RUNTIME_ERRORS_OUTPUT)\
+      if (RELABSD_ENABLE_RUNTIME_ERRORS_OUTPUT)\
       {\
-         _PRINT_STDERR("E", str, __VA_ARGS__);\
+         RELABSD_PRINT_STDERR("E", str, __VA_ARGS__);\
       }\
    )
 
-#define _PROG_ERROR(str, ...)\
-   _ISOLATE\
+#define RELABSD_PROG_ERROR(str, ...)\
+   RELABSD_ISOLATE\
    (\
-      if (_ENABLE_PROGRAMMING_ERRORS_OUTPUT)\
+      if (RELABSD_ENABLE_PROGRAMMING_ERRORS_OUTPUT)\
       {\
-         _PRINT_STDERR("P", str, __VA_ARGS__);\
+         RELABSD_PRINT_STDERR("P", str, __VA_ARGS__);\
       }\
    )
 
-#define _FATAL(str, ...)\
-   _ISOLATE\
+#define RELABSD_FATAL(str, ...)\
+   RELABSD_ISOLATE\
    (\
-     if (_ENABLE_FATAL_ERROR_OUTPUT)\
+     if (RELABSD_ENABLE_FATAL_ERROR_OUTPUT)\
       {\
-         _PRINT_STDERR("F", str, __VA_ARGS__);\
+         RELABSD_PRINT_STDERR("F", str, __VA_ARGS__);\
       }\
    )
 
 /* For outputs without dynamic content (static). ******************************/
 
-#define _PRINT_S_STDERR(symbol, str)\
-   fprintf(stderr, "[" symbol "]" _LOCATION " " str "\n");
+#define RELABSD_PRINT_S_STDERR(symbol, str)\
+   fprintf(stderr, "[" symbol "]" RELABSD_LOCATION " " str "\n");
 
-#define _S_DEBUG(level, str)\
-   _ISOLATE\
+#define RELABSD_S_DEBUG(level, str)\
+   RELABSD_ISOLATE\
    (\
-      if (level < _DEBUG_LVL)\
+      if (level < RELABSD_DEBUG_LVL)\
       {\
-         _PRINT_S_STDERR("D", str);\
+         RELABSD_PRINT_S_STDERR("D", str);\
       }\
    )
 
-#define _S_WARNING(str)\
-   _ISOLATE\
+#define RELABSD_S_WARNING(str)\
+   RELABSD_ISOLATE\
    (\
-      if (_ENABLE_WARNINGS_OUTPUT)\
+      if (RELABSD_ENABLE_WARNINGS_OUTPUT)\
       {\
-         _PRINT_S_STDERR("W", str);\
+         RELABSD_PRINT_S_STDERR("W", str);\
       }\
    )
 
-#define _S_ERROR(str)\
-   _ISOLATE\
+#define RELABSD_S_ERROR(str)\
+   RELABSD_ISOLATE\
    (\
-      if (_ENABLE_RUNTIME_ERRORS_OUTPUT)\
+      if (RELABSD_ENABLE_RUNTIME_ERRORS_OUTPUT)\
       {\
-         _PRINT_S_STDERR("E", str);\
+         RELABSD_PRINT_S_STDERR("E", str);\
       }\
    )
 
-#define _S_PROG_ERROR(str)\
-   _ISOLATE\
+#define RELABSD_S_PROG_ERROR(str)\
+   RELABSD_ISOLATE\
    (\
-      if (_ENABLE_PROGRAMMING_ERRORS_OUTPUT)\
+      if (RELABSD_ENABLE_PROGRAMMING_ERRORS_OUTPUT)\
       {\
-         _PRINT_S_STDERR("P", str);\
+         RELABSD_PRINT_S_STDERR("P", str);\
       }\
    )
 
-#define _S_FATAL(str)\
-   _ISOLATE\
+#define RELABSD_S_FATAL(str)\
+   RELABSD_ISOLATE\
    (\
-     if (_ENABLE_FATAL_ERROR_OUTPUT)\
+     if (RELABSD_ENABLE_FATAL_ERROR_OUTPUT)\
       {\
-         _PRINT_S_STDERR("F", str);\
+         RELABSD_PRINT_S_STDERR("F", str);\
       }\
    )
 
