@@ -25,31 +25,61 @@ if (CMAKE_COMPILER_IS_GNUCC)
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wextra")
 endif (CMAKE_COMPILER_IS_GNUCC)
 
-# Highest debug level is defined here to be able to access it in CMake.
-set(RELABSD_HIGHEST_DEBUG_LEVEL 100)
-target_compile_definitions(
-   relabsd
-   PUBLIC
-   "-DRELABSD_HIGHEST_DEBUG_LVL=${RELABSD_HIGHEST_DEBUG_LEVEL}"
+option(
+   RELABSD_DEBUG_PROGRAM_FLOW
+   "Adds debug messages to display the program's flow."
+   OFF
 )
-message(
-   STATUS
-   "[CONST] Highest debug level set to ${RELABSD_HIGHEST_DEBUG_LEVEL}."
-)
+if (RELABSD_DEBUG_PROGRAM_FLOW)
+   target_compile_definitions(
+      relabsd
+      PUBLIC
+      "-DRELABSD_DEBUG_PROGRAM_FLOW=1"
+   )
+   message(STATUS "[OPTION] Debug messages for the program's flow.")
+endif (RELABSD_DEBUG_PROGRAM_FLOW)
 
-set(
-   RELABSD_DEBUG_LEVEL
-   "0"
-   CACHE
-   INTEGER
-   "Debug verbosity level[0-${RELABSD_HIGHEST_DEBUG_LEVEL}]."
+option(
+   RELABSD_DEBUG_CONFIG
+   "Adds debug messages to check the program's configuration."
+   OFF
 )
-target_compile_definitions(
-   relabsd
-   PUBLIC
-   "-DRELABSD_DEBUG_LVL=${RELABSD_DEBUG_LEVEL}"
+if (RELABSD_DEBUG_CONFIG)
+   target_compile_definitions(
+      relabsd
+      PUBLIC
+      "-DRELABSD_DEBUG_CONFIG=1"
+   )
+   message(STATUS "[OPTION] Debug messages for the program's configuration.")
+endif (RELABSD_DEBUG_CONFIG)
+
+option(
+   RELABSD_DEBUG_REAL_EVENTS
+   "Adds debug messages to check the real device's events."
+   OFF
 )
-message(STATUS "[OPTION] Debug level set to ${RELABSD_DEBUG_LEVEL}.")
+if (RELABSD_DEBUG_REAL_EVENTS)
+   target_compile_definitions(
+      relabsd
+      PUBLIC
+      "-DRELABSD_DEBUG_REAL_EVENTS=1"
+   )
+   message(STATUS "[OPTION] Debug messages for the real device's events.")
+endif (RELABSD_DEBUG_REAL_EVENTS)
+
+option(
+   RELABSD_DEBUG_VIRTUAL_EVENTS
+   "Adds debug messages to check the virtual device's events."
+   OFF
+)
+if (RELABSD_DEBUG_VIRTUAL_EVENTS)
+   target_compile_definitions(
+      relabsd
+      PUBLIC
+      "-DRELABSD_DEBUG_VIRTUAL_EVENTS=1"
+   )
+   message(STATUS "[OPTION] Debug messages for the virtual device's events.")
+endif (RELABSD_DEBUG_VIRTUAL_EVENTS)
 
 option(
    RELABSD_ENABLE_ERROR_LOCATION

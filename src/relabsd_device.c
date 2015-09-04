@@ -140,6 +140,8 @@ int relabsd_device_create
 {
    int fd;
 
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Creating virtual device...");
+
    fd = open(config->input_file, O_RDONLY);
 
    if (fd < 0)
@@ -208,6 +210,8 @@ int relabsd_device_create
 
 void relabsd_device_destroy (const struct relabsd_device * const dev)
 {
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Destroying virtual device...");
+
    libevdev_uinput_destroy(dev->uidev);
    libevdev_free(dev->dev);
 }
@@ -220,12 +224,22 @@ int relabsd_device_write_evdev_event
    int const value
 )
 {
-   /* OPTIMIZE: Should we really send 'EV_SYN' after every event? */
-   if
+   RELABSD_DEBUG
    (
-      (libevdev_uinput_write_event(dev->uidev, type, code, value) == 0)
-      && (libevdev_uinput_write_event(dev->uidev, EV_SYN, SYN_REPORT, 0) == 0)
-   )
+      RELABSD_DEBUG_VIRTUAL_EVENTS,
+      "Sending event: {type = %s; code = %s; value = %d}.",
+       libevdev_event_type_get_name(type),
+       libevdev_event_code_get_name(type, code),
+       value
+   );
+
+   /*
+    * We'll also send the 'EV_SYN' events when we receive them from the input
+    * device.
+    * OPTIMIZE: prevent 'EV_SYN' from being sent if we haven't sent any new
+    *           values. (It might not be worth it though)
+    */
+   if (libevdev_uinput_write_event(dev->uidev, type, code, value) == 0)
    {
       return 0;
    }

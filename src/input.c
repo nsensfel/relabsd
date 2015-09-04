@@ -85,6 +85,8 @@ int relabsd_input_open
    const struct relabsd_config * const conf
 )
 {
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Opening input device...");
+
    input->fd = open(conf->input_file, O_RDONLY);
 
    if (input->fd < 0)
@@ -126,6 +128,8 @@ int relabsd_input_open
 
 void relabsd_input_close (const struct relabsd_input * const input)
 {
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Closing input device...");
+
    libevdev_free(input->dev);
    close(input->fd);
 }
@@ -166,8 +170,8 @@ int relabsd_input_read
 
    RELABSD_DEBUG
    (
-      90,
-      "[INPUT] Valid event received: {type = %s; code = %s; value = %d}.",
+      RELABSD_DEBUG_REAL_EVENTS,
+      "Valid event received: {type = %s; code = %s; value = %d}.",
        libevdev_event_type_get_name(event.type),
        libevdev_event_code_get_name(event.type, event.code),
        event.value

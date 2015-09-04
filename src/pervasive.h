@@ -11,4 +11,6 @@
 /* strncmp stops at '\0' and strlen does not count '\0'. */
 #define RELABSD_IS_PREFIX(a, b) (strncmp(a, b, strlen(a)) == 0)
 
+#define RELABSD_STRING_EQUALS(a, b) (strcmp(a, b) == 0)
+
 #endif

@@ -61,6 +61,8 @@ static void convert_input
    unsigned int input_type, input_code;
    int value;
 
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Handling input events...");
+
    while (RELABSD_RUN == 1)
    {
       if (relabsd_input_read(input, &input_type, &input_code, &value) < 0)
@@ -88,6 +90,8 @@ static void convert_input
 
 static int set_signal_handlers ()
 {
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Setting signal handlers.");
+
    if (signal(SIGINT, interrupt) == SIG_ERR)
    {
       RELABSD_S_FATAL("Unable to set the SIGINT signal handler.");
@@ -103,6 +107,8 @@ int main (int argc, char ** argv)
    struct relabsd_config conf;
    struct relabsd_input input;
    struct relabsd_device dev;
+
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "relabsd started.");
 
    if (set_signal_handlers() < 0)
    {
@@ -124,14 +130,14 @@ int main (int argc, char ** argv)
       return -4;
    }
 
-   RELABSD_S_DEBUG(10, "Converting inputs...");
-
    convert_input(&conf, &input, &dev);
 
-   RELABSD_S_DEBUG(10, "Terminating...");
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Terminating...");
 
    relabsd_device_destroy(&dev);
    relabsd_input_close(&input);
+
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Done.");
 
    return 0;
 }

@@ -5,42 +5,37 @@
 #include "axis.h"
 #include "error.h"
 
-/*
- * Implementation note: RELABSD_IS_PREFIX, as its name implies, is checking for a
- * prefix, not an equal value. This could cause issues if there were axes
- * with name prefixed by another axis name.
- */
 enum relabsd_axis relabsd_axis_from_name (const char * const name)
 {
-   if (RELABSD_IS_PREFIX("X", name))
+   if (RELABSD_STRING_EQUALS("X", name))
    {
       return RELABSD_X;
    }
-   else if (RELABSD_IS_PREFIX("Y", name))
+   else if (RELABSD_STRING_EQUALS("Y", name))
    {
       return RELABSD_Y;
    }
-   else if (RELABSD_IS_PREFIX("Z", name))
+   else if (RELABSD_STRING_EQUALS("Z", name))
    {
       return RELABSD_Z;
    }
-   else if (RELABSD_IS_PREFIX("RX", name))
+   else if (RELABSD_STRING_EQUALS("RX", name))
    {
       return RELABSD_RX;
    }
-   else if (RELABSD_IS_PREFIX("RY", name))
+   else if (RELABSD_STRING_EQUALS("RY", name))
    {
       return RELABSD_RY;
    }
-   else if (RELABSD_IS_PREFIX("RZ", name))
+   else if (RELABSD_STRING_EQUALS("RZ", name))
    {
       return RELABSD_RZ;
    }
-   else if (RELABSD_IS_PREFIX("WL", name))
+   else if (RELABSD_STRING_EQUALS("WL", name))
    {
       return RELABSD_WHEEL;
    }
-   else if (RELABSD_IS_PREFIX("MC", name))
+   else if (RELABSD_STRING_EQUALS("MC", name))
    {
       return RELABSD_MISC;
    }

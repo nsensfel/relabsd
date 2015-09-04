@@ -6,13 +6,20 @@
 #include "config.h"
 #include "pervasive.h"
 
-
-#ifndef RELABSD_HIGHEST_DEBUG_LVL
-   #define RELABSD_HIGHEST_DEBUG_LVL         100
+#ifndef RELABSD_DEBUG_PROGRAM_FLOW
+   #define RELABSD_DEBUG_PROGRAM_FLOW 0
 #endif
 
-#ifndef RELABSD_DEBUG_LEVEL
-   #define RELABSD_DEBUG_LVL                 0
+#ifndef RELABSD_DEBUG_CONFIG
+   #define RELABSD_DEBUG_CONFIG 0
+#endif
+
+#ifndef RELABSD_DEBUG_REAL_EVENTS
+   #define RELABSD_DEBUG_REAL_EVENTS 0
+#endif
+
+#ifndef RELABSD_DEBUG_VIRTUAL_EVENTS
+   #define RELABSD_DEBUG_VIRTUAL_EVENTS 0
 #endif
 
 #define RELABSD_ENABLE_WARNINGS_OUTPUT              1
@@ -29,10 +36,16 @@
 #define RELABSD_PRINT_STDERR(symbol, str, ...)\
    fprintf(stderr, "[" symbol "]" RELABSD_LOCATION " " str "\n", __VA_ARGS__);
 
-#define RELABSD_DEBUG(level, str, ...)\
+/*
+ * Given that we use preprocessor contants as flags, we can expect the compilers
+ * to remove the test condition for disabled flags. No need to be shy about
+ * allowing many debug options.
+ */
+
+#define RELABSD_DEBUG(flag, str, ...)\
    RELABSD_ISOLATE\
    (\
-      if (level < RELABSD_DEBUG_LVL)\
+      if (flag)\
       {\
          RELABSD_PRINT_STDERR("D", str, __VA_ARGS__);\
       }\
@@ -80,10 +93,10 @@
 #define RELABSD_PRINT_S_STDERR(symbol, str)\
    fprintf(stderr, "[" symbol "]" RELABSD_LOCATION " " str "\n");
 
-#define RELABSD_S_DEBUG(level, str)\
+#define RELABSD_S_DEBUG(flag, str)\
    RELABSD_ISOLATE\
    (\
-      if (level < RELABSD_DEBUG_LVL)\
+      if (flag)\
       {\
          RELABSD_PRINT_S_STDERR("D", str);\
       }\

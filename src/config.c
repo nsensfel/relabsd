@@ -88,14 +88,55 @@ static int parse_option
    if (strcmp(name, "direct") == 0)
    {
       conf->axis[axis].option[RELABSD_DIRECT_OPTION] = 1;
+
+      RELABSD_DEBUG
+      (
+         RELABSD_DEBUG_CONFIG,
+         "Axis '%s' enabled option 'direct'.",
+         relabsd_axis_to_name(axis)
+      );
+
+      if (conf->axis[axis].option[RELABSD_FRAMED_OPTION])
+      {
+         RELABSD_WARNING
+         (
+            "[CONFIG] Axis '%s': using option 'direct' discards option"
+            "'framed'.",
+            relabsd_axis_to_name(axis)
+         );
+      }
    }
    else if (strcmp(name, "real_fuzz") == 0)
    {
       conf->axis[axis].option[RELABSD_REAL_FUZZ_OPTION] = 1;
+
+      RELABSD_DEBUG
+      (
+         RELABSD_DEBUG_CONFIG,
+         "Axis '%s' enabled option 'real_fuzz'.",
+         relabsd_axis_to_name(axis)
+      );
    }
    else if (strcmp(name, "framed") == 0)
    {
       conf->axis[axis].option[RELABSD_FRAMED_OPTION] = 1;
+
+      RELABSD_DEBUG
+      (
+         RELABSD_DEBUG_CONFIG,
+         "Axis '%s' enabled option 'framed'.",
+         relabsd_axis_to_name(axis)
+      );
+
+      if (conf->axis[axis].option[RELABSD_DIRECT_OPTION])
+      {
+         RELABSD_WARNING
+         (
+            "[CONFIG] Axis '%s': using option 'direct' discards option"
+            "'framed'.",
+            relabsd_axis_to_name(axis)
+         );
+      }
    }
    else
    {
@@ -280,6 +321,18 @@ static int parse_axis_configuration_line
       return -1;
    }
 
+   RELABSD_DEBUG
+   (
+      RELABSD_DEBUG_CONFIG,
+      "Axis '%s': {min = %d; max = %d; fuzz = %d; flat = %d; resolution = %d}",
+      buffer,
+      conf->axis[axis].min,
+      conf->axis[axis].max,
+      conf->axis[axis].fuzz,
+      conf->axis[axis].flat,
+      conf->axis[axis].resolution
+   );
+
    errno = prev_errno;
 
    conf->axis[axis].enabled = 1;
@@ -319,10 +372,10 @@ static int read_config_file
 )
 {
    FILE * f;
-   char buffer[3];
+   char buffer[(RELABSD_CONF_AXIS_CODE_SIZE + 1)];
    int continue_reading, prev_errno;
 
-   buffer[2] = '\0';
+   buffer[RELABSD_CONF_AXIS_CODE_SIZE] = '\0';
 
    f = fopen(filename, "r");
 
@@ -342,7 +395,20 @@ static int read_config_file
 
    continue_reading = 1;
 
-   while ((continue_reading == 1) && (fscanf(f, "%2s", buffer) != EOF))
+   while
+   (
+      (continue_reading == 1)
+      &&
+      (
+         fscanf
+         (
+            f,
+            "%" RELABSD_TO_STRING(RELABSD_CONF_AXIS_CODE_SIZE) "s",
+            buffer
+         )
+         != EOF
+      )
+   )
    {
       switch (read_config_line(conf, f, buffer))
       {
@@ -429,6 +495,8 @@ int relabsd_config_parse
    char * const * const argv
 )
 {
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Parsing config & params...");
+
    if (check_usage(argc, argv) < 0)
    {
       return -1;
@@ -437,13 +505,33 @@ int relabsd_config_parse
    if (argc == 3)
    {
       conf->device_name = NULL;
+
+      RELABSD_S_DEBUG
+      (
+         RELABSD_DEBUG_CONFIG,
+         "No virtual device name param, will use the real device's."
+      );
    }
    else
    {
       conf->device_name = argv[3];
+
+      RELABSD_DEBUG
+      (
+         RELABSD_DEBUG_CONFIG,
+         "Virtual device name param set to '%s'.",
+         conf->device_name
+      );
    }
 
    conf->input_file = argv[1];
+
+   RELABSD_DEBUG
+   (
+      RELABSD_DEBUG_CONFIG,
+      "Using configuration file '%s'.",
+      conf->input_file
+   );
 
    init_axes_config(conf);
 
