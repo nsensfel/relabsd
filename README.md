@@ -3,14 +3,14 @@
  
 ## Use cases
 * Use a relative input device as a joystick.
-* Bypass an issue causing your device to report its axis are relative when they are absolutes (see [the wiki page on 3DConnexion devices]() for example), this can be required by some librairies (such as Simple DirectMedial Layer - SDL) for your device to be recognized.
+* Bypass an issue causing your device to report its axis are relative when they are absolutes (see [the wiki page on 3DConnexion devices](https://github.com/nsensfel/relabsd/wiki/3Dconnexion-devices) for example), this can be required by some librairies (such as Simple DirectMedial Layer - SDL) for your device to be recognized.
 
 ## Dependencies
 * CMake (>= 3.0)
 * libevdev
 
 ## How to use
-See [the related wiki page]().
+See [the related wiki page on how to set up relabsd](https://github.com/nsensfel/relabsd/wiki/Setting-up-relabsd), and the one on [how to create a virtual device](https://github.com/nsensfel/relabsd/wiki/Creating-a-virtual-device).
 
 ### Results
 (Using [Grumpel's sdl-jstest](https://github.com/Grumbel/sdl-jstest))
@@ -59,4 +59,4 @@ GameController:
 ## I can't find my (real) input device.
 Your input device should be listed in /dev/input.
 
-If you are using a 3DConnexion device and not finding it in /dev/input, read [this wiki page](https://github.com/nsensfel/relabsd/wiki/Note-on-3DConnexion-devices).
+If you are using a 3DConnexion device and not finding it in /dev/input, read [this wiki page](https://github.com/nsensfel/relabsd/wiki/3DConnexion-devices).
