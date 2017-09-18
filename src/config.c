@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <limits.h>
 
+#include <sys/time.h>
+
 #include "error.h"
 #include "pervasive.h"
 #include "axis.h"
@@ -242,6 +244,66 @@ static int read_axis_options
    return -1;
 }
 
+static int parse_timeout_option
+(
+   struct relabsd_config * const conf,
+   FILE * const f
+)
+{
+   int valc, timeout_msec;
+   const int prev_errno = errno;
+
+   conf->enable_timeout = 1;
+
+   errno = 0;
+
+   valc = fscanf(f, "%d", &timeout_msec);
+
+   if (valc == EOF)
+   {
+      if (errno == 0)
+      {
+         RELABSD_S_FATAL
+         (
+            "[CONFIG] Unexpected end of file while reading timeout option."
+         );
+      }
+      else
+      {
+         RELABSD_FATAL
+         (
+            "[CONFIG] An error occured while reading timeout option: %s.",
+            strerror(errno)
+         );
+      }
+
+      errno = prev_errno;
+
+      return -1;
+   }
+   else if (valc < 1)
+   {
+      RELABSD_S_FATAL
+      (
+         "[CONFIG] Invalid parameter count for timeout option (1 expected)."
+      );
+
+      errno = prev_errno;
+
+      return -1;
+   }
+
+   memset((void *) &(conf->timeout), 0, sizeof(struct timeval));
+
+   conf->timeout.tv_usec =
+      (
+         ((suseconds_t) timeout_msec)
+         * ((suseconds_t) 1000)
+      );
+
+   return 0;
+}
+
 /*
  * Returns -1 on (fatal) error,
  *          0 on succes.
@@ -260,6 +322,22 @@ static int parse_axis_configuration_line
 
    if (axis == RELABSD_UNKNOWN)
    {
+      if (RELABSD_STRING_EQUALS("timeout", buffer))
+      {
+         if (parse_timeout_option(conf, f) < 0)
+         {
+            RELABSD_FATAL
+            (
+               "[CONFIG] Issue while parsing timeout option '%s'.",
+               buffer
+            );
+
+            return -1;
+         }
+
+         return 0;
+      }
+
       RELABSD_FATAL
       (
          "[CONFIG] Unknown axis '%s'.",
@@ -389,6 +467,8 @@ static int read_config_file
 
       return -1;
    }
+
+   conf->enable_timeout = 0;
 
    prev_errno = errno;
    errno = 0;

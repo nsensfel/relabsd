@@ -41,6 +41,8 @@ struct relabsd_config
 {
    const char * input_file;
    const char * device_name;
+   struct timeval timeout;
+   int enable_timeout;
    struct relabsd_config_axis axis[RELABSD_VALID_AXES_COUNT];
 };
 
