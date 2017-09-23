@@ -154,7 +154,7 @@ int relabsd_input_read
       libevdev_next_event
       (
          input->dev,
-         (LIBEVDEV_READ_FLAG_NORMAL /*| LIBEVDEV_READ_FLAG_BLOCKING*/),
+         (LIBEVDEV_READ_FLAG_NORMAL | LIBEVDEV_READ_FLAG_BLOCKING),
          &event
       );
 
@@ -224,7 +224,7 @@ int relabsd_input_wait_for_next_event
       &ready_to_read,
       (fd_set *) NULL,
       (fd_set *) NULL,
-      &(curr_timeout)
+      (input->timed_out) ? NULL : &(curr_timeout)
    );
 
    if (errno != 0)

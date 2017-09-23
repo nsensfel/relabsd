@@ -9,6 +9,7 @@ struct relabsd_input
 {
    struct libevdev * dev;
    int fd;
+   int timed_out;
 };
 
 /*

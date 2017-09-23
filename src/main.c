@@ -54,7 +54,7 @@ static void handle_relative_axis_event
 static void convert_input
 (
    struct relabsd_config * const conf,
-   const struct relabsd_input * const input,
+   struct relabsd_input * const input,
    const struct relabsd_device * const dev
 )
 {
@@ -63,6 +63,8 @@ static void convert_input
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Handling input events...");
 
+   input->timed_out = 1;
+
    while (RELABSD_RUN == 1)
    {
       if (conf->enable_timeout)
@@ -70,10 +72,12 @@ static void convert_input
          switch (relabsd_input_wait_for_next_event(input, conf))
          {
             case 1:
+               input->timed_out = 0;
                break;
 
             case 0:
                relabsd_device_set_axes_to_zero(dev, conf);
+               input->timed_out = 1;
                break;
 
             case -1:
