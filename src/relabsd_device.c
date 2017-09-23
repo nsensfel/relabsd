@@ -203,8 +203,6 @@ int relabsd_device_create
       return -1;
    }
 
-   close(fd);
-
    dev->fd = fd;
 
    return 0;
@@ -216,6 +214,7 @@ void relabsd_device_destroy (const struct relabsd_device * const dev)
 
    libevdev_uinput_destroy(dev->uidev);
    libevdev_free(dev->dev);
+   close(dev->fd);
 }
 
 int relabsd_device_write_evdev_event
