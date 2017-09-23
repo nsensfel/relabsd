@@ -65,6 +65,22 @@ static void convert_input
 
    while (RELABSD_RUN == 1)
    {
+      if (conf->enable_timeout)
+      {
+         switch (relabsd_device_wait_next_event(dev, conf))
+         {
+            case 1:
+               break;
+
+            case 0:
+               relabsd_device_set_axes_to_zero(dev, conf);
+               break;
+
+            case -1:
+               continue;
+         }
+      }
+
       if (relabsd_input_read(input, &input_type, &input_code, &value) < 0)
       {
          /*

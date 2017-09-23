@@ -10,6 +10,7 @@ struct relabsd_device
 {
    struct libevdev * dev;
    struct libevdev_uinput * uidev;
+   int fd;
 };
 
 /*
@@ -48,6 +49,22 @@ int relabsd_device_write_evdev_event
    unsigned int const type,
    unsigned int const code,
    int const value
+);
+
+/*
+ * Send an event for each enabled axis, setting it to zero.
+ * An EV_SYN event is sent afterwards.
+ */
+void relabsd_device_set_axes_to_zero
+(
+   const struct relabsd_device * const dev,
+   const struct relabsd_config * const config
+);
+
+int relabsd_device_wait_next_event
+(
+   const struct relabsd_device * const dev,
+   const struct relabsd_config * const config
 );
 
 #endif

@@ -244,6 +244,7 @@ static int read_axis_options
    return -1;
 }
 
+/*
 static int parse_timeout_option
 (
    struct relabsd_config * const conf,
@@ -295,6 +296,8 @@ static int parse_timeout_option
 
    memset((void *) &(conf->timeout), 0, sizeof(struct timeval));
 
+   conf->timeout.tv_sec = (time_t) (timeout_msec / 1000);
+
    conf->timeout.tv_usec =
       (
          ((suseconds_t) timeout_msec)
@@ -303,6 +306,7 @@ static int parse_timeout_option
 
    return 0;
 }
+*/
 
 /*
  * Returns -1 on (fatal) error,
@@ -322,22 +326,6 @@ static int parse_axis_configuration_line
 
    if (axis == RELABSD_UNKNOWN)
    {
-      if (RELABSD_STRING_EQUALS("timeout", buffer))
-      {
-         if (parse_timeout_option(conf, f) < 0)
-         {
-            RELABSD_FATAL
-            (
-               "[CONFIG] Issue while parsing timeout option '%s'.",
-               buffer
-            );
-
-            return -1;
-         }
-
-         return 0;
-      }
-
       RELABSD_FATAL
       (
          "[CONFIG] Unknown axis '%s'.",
@@ -468,7 +456,6 @@ static int read_config_file
       return -1;
    }
 
-   conf->enable_timeout = 0;
 
    prev_errno = errno;
    errno = 0;
@@ -619,6 +606,16 @@ int relabsd_config_parse
    {
       return -1;
    }
+
+   conf->enable_timeout = RELABSD_ENABLE_TIMEOUT;
+
+   conf->timeout.tv_sec = (time_t) (RELABSD_TIMEOUT_MSEC / 1000);
+
+   conf->timeout.tv_usec =
+      (
+         ((suseconds_t) RELABSD_TIMEOUT_MSEC)
+         * ((suseconds_t) 1000)
+      );
 
    return 0;
 }
