@@ -145,11 +145,16 @@ int relabsd_input_read
    int rc;
    struct input_event event;
 
+   if (libevdev_has_event_pending(input->dev) == 0)
+   {
+      return -1;
+   }
+
    rc =
       libevdev_next_event
       (
          input->dev,
-         (LIBEVDEV_READ_FLAG_NORMAL | LIBEVDEV_READ_FLAG_BLOCKING),
+         (LIBEVDEV_READ_FLAG_NORMAL /*| LIBEVDEV_READ_FLAG_BLOCKING*/),
          &event
       );
 
@@ -182,4 +187,89 @@ int relabsd_input_read
    *input_value = event.value;
 
    return 0;
+}
+
+int relabsd_input_wait_for_next_event
+(
+   const struct relabsd_input * const input,
+   const struct relabsd_config * const config
+)
+{
+   int ready_fds;
+   const int old_errno = errno;
+   fd_set ready_to_read;
+   struct timeval curr_timeout;
+
+   FD_ZERO(&ready_to_read);
+   FD_SET(input->fd, &ready_to_read);
+
+   /* call to select may alter timeout */
+   memcpy
+   (
+      (void *) &(curr_timeout),
+      (const void *) &(config->timeout),
+      sizeof(struct timeval)
+   );
+
+   errno = 0;
+
+   RELABSD_S_ERROR
+   (
+      "Waiting for input to be ready..."
+   );
+
+   ready_fds = select
+   (
+      (input->fd + 1),
+      &ready_to_read,
+      (fd_set *) NULL,
+      (fd_set *) NULL,
+      &(curr_timeout)
+   );
+
+   if (errno != 0)
+   {
+      RELABSD_ERROR
+      (
+         "Unable to wait for timeout: %s (errno: %d).",
+         strerror(errno),
+         errno
+      );
+
+      if (errno == EINTR)
+      {
+         /* Signal interruption? */
+      }
+      else
+      {
+         /* TODO: error message */
+      }
+
+      errno = old_errno;
+
+      return -1;
+   }
+
+   if (ready_fds == -1)
+   {
+      /* TODO: error message */
+
+      RELABSD_S_ERROR
+      (
+         "Unable to wait for timeout, yet errno was not set to anything."
+      );
+
+      errno = old_errno;
+
+      return -1;
+   }
+
+   RELABSD_ERROR
+   (
+      "Input is ready, ready_fds = %d", ready_fds
+   );
+
+   errno = old_errno;
+
+   return ready_fds;
 }

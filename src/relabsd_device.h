@@ -10,7 +10,6 @@ struct relabsd_device
 {
    struct libevdev * dev;
    struct libevdev_uinput * uidev;
-   int fd;
 };
 
 /*
@@ -61,10 +60,5 @@ void relabsd_device_set_axes_to_zero
    const struct relabsd_config * const config
 );
 
-int relabsd_device_wait_next_event
-(
-   const struct relabsd_device * const dev,
-   const struct relabsd_config * const config
-);
 
 #endif

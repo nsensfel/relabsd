@@ -203,7 +203,7 @@ int relabsd_device_create
       return -1;
    }
 
-   dev->fd = fd;
+   close(fd);
 
    return 0;
 }
@@ -214,7 +214,6 @@ void relabsd_device_destroy (const struct relabsd_device * const dev)
 
    libevdev_uinput_destroy(dev->uidev);
    libevdev_free(dev->dev);
-   close(dev->fd);
 }
 
 int relabsd_device_write_evdev_event
@@ -264,8 +263,8 @@ void relabsd_device_set_axes_to_zero
          relabsd_device_write_evdev_event
          (
             dev,
-            relabsd_axis_to_abs((enum relabsd_axis) i),
             EV_ABS,
+            relabsd_axis_to_abs((enum relabsd_axis) i),
             0
          );
       }
@@ -277,77 +276,3 @@ void relabsd_device_set_axes_to_zero
    libevdev_uinput_write_event(dev->uidev, EV_SYN, SYN_REPORT, 0);
 }
 
-int relabsd_device_wait_next_event
-(
-   const struct relabsd_device * const dev,
-   const struct relabsd_config * const config
-)
-{
-   int ready_fds;
-   const int old_errno = errno;
-   fd_set ready_to_read;
-   struct timeval curr_timeout;
-
-   FD_ZERO(&ready_to_read);
-   FD_SET(dev->fd, &ready_to_read);
-
-   /* call to select may alter timeout */
-   memcpy
-   (
-      (void *) &(curr_timeout),
-      (const void *) &(config->timeout),
-      sizeof(struct timeval)
-   );
-
-   errno = 0;
-
-   ready_fds = select
-   (
-      (dev->fd + 1),
-      &ready_to_read,
-      (fd_set *) NULL,
-      (fd_set *) NULL,
-      &(curr_timeout)
-   );
-
-   if (errno != 0)
-   {
-      RELABSD_ERROR
-      (
-         "Unable to wait for timeout: %s (errno: %d).",
-         strerror(errno),
-         errno
-      );
-
-      if (errno == EINTR)
-      {
-         /* Signal interruption? */
-      }
-      else
-      {
-         /* TODO: error message */
-      }
-
-      errno = old_errno;
-
-      return -1;
-   }
-
-   if (ready_fds == -1)
-   {
-      /* TODO: error message */
-
-      RELABSD_S_ERROR
-      (
-         "Unable to wait for timeout, yet errno was not set to anything."
-      );
-
-      errno = old_errno;
-
-      return -1;
-   }
-
-   errno = old_errno;
-
-   return ready_fds;
-}

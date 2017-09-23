@@ -67,7 +67,7 @@ static void convert_input
    {
       if (conf->enable_timeout)
       {
-         switch (relabsd_device_wait_next_event(dev, conf))
+         switch (relabsd_input_wait_for_next_event(input, conf))
          {
             case 1:
                break;

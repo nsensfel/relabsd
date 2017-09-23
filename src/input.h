@@ -43,4 +43,10 @@ int relabsd_input_read
    int * const input_value
 );
 
+int relabsd_input_wait_for_next_event
+(
+   const struct relabsd_input * const input,
+   const struct relabsd_config * const config
+);
+
 #endif
