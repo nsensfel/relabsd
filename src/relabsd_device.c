@@ -241,12 +241,26 @@ int relabsd_device_write_evdev_event
     */
    if (libevdev_uinput_write_event(dev->uidev, type, code, value) == 0)
    {
+      /* FIXME:
+       * Why does activating the timeout trigger the EV_KEYS event to not be
+       * followed by EV_SYN?
+       */
+      if (type == EV_KEY)
+      {
+         libevdev_uinput_write_event
+         (
+            dev->uidev,
+            EV_SYN,
+            SYN_REPORT,
+            0
+         );
+      }
+
       return 0;
    }
 
    return -1;
 }
-
 
 void relabsd_device_set_axes_to_zero
 (
@@ -255,6 +269,16 @@ void relabsd_device_set_axes_to_zero
 )
 {
    int i;
+//   libevdev_uinput_write_event
+   relabsd_device_write_evdev_event
+   (
+//      dev->uidev,
+      dev,
+      EV_SYN,
+      SYN_REPORT,
+      0
+   );
+
 
    for (i = 0; i < RELABSD_VALID_AXES_COUNT; ++i)
    {
@@ -267,12 +291,20 @@ void relabsd_device_set_axes_to_zero
             relabsd_axis_to_abs((enum relabsd_axis) i),
             0
          );
+
+         /*
+          * Also send a SYN event when the axes have been modified.
+          */
+
       }
    }
 
-   /*
-    * Also send a SYN event when the axes have been modified.
-    */
-   libevdev_uinput_write_event(dev->uidev, EV_SYN, SYN_REPORT, 0);
+   libevdev_uinput_write_event
+   (
+      dev->uidev,
+      EV_SYN,
+      SYN_REPORT,
+      0
+   );
 }
 
