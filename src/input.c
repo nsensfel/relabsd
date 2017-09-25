@@ -145,11 +145,12 @@ int relabsd_input_read
    int rc;
    struct input_event event;
 
+   /*
    if (libevdev_has_event_pending(input->dev) == 0)
    {
       return -1;
    }
-
+   */
    rc =
       libevdev_next_event
       (
