@@ -244,11 +244,10 @@ static int read_axis_options
    return -1;
 }
 
-/*
 static int parse_timeout_option
 (
    struct relabsd_config * const conf,
-   FILE * const f
+   const char * const param
 )
 {
    int valc, timeout_msec;
@@ -258,7 +257,7 @@ static int parse_timeout_option
 
    errno = 0;
 
-   valc = fscanf(f, "%d", &timeout_msec);
+   valc = scanf(param, "%d", &timeout_msec);
 
    if (valc == EOF)
    {
@@ -266,14 +265,14 @@ static int parse_timeout_option
       {
          RELABSD_S_FATAL
          (
-            "[CONFIG] Unexpected end of file while reading timeout option."
+            "Unexpected end of file while reading timeout option."
          );
       }
       else
       {
          RELABSD_FATAL
          (
-            "[CONFIG] An error occured while reading timeout option: %s.",
+            "An error occured while reading timeout option: %s.",
             strerror(errno)
          );
       }
@@ -286,7 +285,7 @@ static int parse_timeout_option
    {
       RELABSD_S_FATAL
       (
-         "[CONFIG] Invalid parameter count for timeout option (1 expected)."
+         "Invalid parameter count for timeout option (1 int expected)."
       );
 
       errno = prev_errno;
@@ -294,6 +293,15 @@ static int parse_timeout_option
       return -1;
    }
 
+   if (timeout_msec <= 0)
+   {
+      RELABSD_FATAL
+      (
+         "Illegal value for timeout \"%d\": accepted range is [1, %d].",
+         timeout_msec,
+         INT_MAX
+      );
+   }
    memset((void *) &(conf->timeout), 0, sizeof(struct timeval));
 
    conf->timeout.tv_sec = (time_t) (timeout_msec / 1000);
@@ -306,7 +314,6 @@ static int parse_timeout_option
 
    return 0;
 }
-*/
 
 /*
  * Returns -1 on (fatal) error,
@@ -521,6 +528,27 @@ static int read_config_file
    return 0;
 }
 
+static void print_usage
+(
+   const char * const exec
+)
+{
+   RELABSD_FATAL
+   (
+      "USAGE: %s input_device config_file [<OPTION>+]\n"
+      "<OPTION>:\n"
+      "\t [-n | --name] <relabsd_device_name>: Names the virtual device.\n"
+      "\t [-t | --timeout] <timeout_in_ms>: Resets all enabled axes to zero"
+      " <timeout_in_ms> milliseconds after the last event. Range for"
+      " <timeout_in_ms>: [1, %d].\n"
+      "Alternatively, the previous usage is still supported:\n"
+      "\t%s input_device config_file [<relabsd_device_name>]\n"
+      "However, with that usage, <relabsd_device_name> cannot start with '-'.",
+      exec,
+      INT_MAX,
+      exec
+   );
+}
 /*
  * Returns -1 on (fatal) error,
  *          0 on valid usage.
@@ -531,13 +559,9 @@ static int check_usage
    char * const * const argv
 )
 {
-   if ((argc < 3) || (argc > 4))
+   if (argc < 3)
    {
-      RELABSD_FATAL
-      (
-         "Usage: %s input_device config_file [<relabsd_device_name>]",
-         argv[0]
-      );
+      print_usage(argv[0]);
 
       return -1;
    }
@@ -555,6 +579,101 @@ static void init_axes_config (struct relabsd_config * const conf)
    }
 }
 
+static int parse_options
+(
+   struct relabsd_config * const conf,
+   int const argc,
+   char * const * const argv
+)
+{
+   int i;
+
+   if ((argc == 4) && !RELABSD_IS_PREFIX("-", argv[3]))
+   {
+      /* Old usage */
+
+      RELABSD_S_DEBUG(RELABSD_DEBUG_CONFIG, "Old usage detected.");
+
+      conf->device_name = argv[3];
+
+      RELABSD_DEBUG
+      (
+         RELABSD_DEBUG_CONFIG,
+         "Virtual device name param set to '%s'.",
+         conf->device_name
+      );
+
+      return 0;
+   }
+
+   conf->device_name = NULL;
+   conf->enable_timeout = 0;
+
+   for (i = 3; i < argc; ++i)
+   {
+      if
+      (
+         RELABSD_STRING_EQUALS("-n", argv[i])
+         || RELABSD_STRING_EQUALS("--name", argv[i])
+      )
+      {
+         i += 1;
+
+         if (i >= argc)
+         {
+            RELABSD_S_FATAL
+            (
+               "Missing value for parameter \"--name\"."
+            );
+
+            print_usage(argv[0]);
+
+            return -1;
+         }
+
+         conf->device_name = argv[i];
+      }
+      else if
+      (
+         RELABSD_STRING_EQUALS("-t", argv[i])
+         || RELABSD_STRING_EQUALS("--timeout", argv[i])
+      )
+      {
+         i += 1;
+
+         if (i >= argc)
+         {
+            RELABSD_S_FATAL
+            (
+               "Missing value for parameter \"--timeout\"."
+            );
+
+            print_usage(argv[0]);
+
+            return -1;
+         }
+
+         if (parse_timeout_option(conf, argv[i]) < 0)
+         {
+            return -1;
+         }
+      }
+      else
+      {
+         RELABSD_FATAL
+         (
+            "Unknown parameter \"%s\".",
+            argv[i]
+         );
+
+         print_usage(argv[0]);
+
+         return -1;
+      }
+   }
+
+   return 0;
+}
 int relabsd_config_parse
 (
    struct relabsd_config * const conf,
@@ -569,26 +688,9 @@ int relabsd_config_parse
       return -1;
    }
 
-   if (argc == 3)
+   if (parse_options(conf, argc, argv) < 0)
    {
-      conf->device_name = NULL;
-
-      RELABSD_S_DEBUG
-      (
-         RELABSD_DEBUG_CONFIG,
-         "No virtual device name param, will use the real device's."
-      );
-   }
-   else
-   {
-      conf->device_name = argv[3];
-
-      RELABSD_DEBUG
-      (
-         RELABSD_DEBUG_CONFIG,
-         "Virtual device name param set to '%s'.",
-         conf->device_name
-      );
+      return -1;
    }
 
    conf->input_file = argv[1];
@@ -606,16 +708,6 @@ int relabsd_config_parse
    {
       return -1;
    }
-
-   conf->enable_timeout = RELABSD_ENABLE_TIMEOUT;
-
-   conf->timeout.tv_sec = (time_t) (RELABSD_TIMEOUT_MSEC / 1000);
-
-   conf->timeout.tv_usec =
-      (
-         ((suseconds_t) RELABSD_TIMEOUT_MSEC)
-         * ((suseconds_t) 1000)
-      );
 
    return 0;
 }

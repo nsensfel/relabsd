@@ -11,16 +11,6 @@
 /* Number of options that can be configured. */
 #define RELABSD_OPTIONS_COUNT 3
 
-/* TODO: turn this into a runtime parameter */
-#ifndef RELABSD_ENABLE_TIMEOUT
-   #define RELABSD_ENABLE_TIMEOUT 1
-#endif
-
-/* TODO: turn this into a runtime parameter */
-#ifndef RELABSD_TIMEOUT_MSEC
-   #define RELABSD_TIMEOUT_MSEC 100
-#endif
-
 enum relabsd_option
 {
    RELABSD_DIRECT_OPTION,
