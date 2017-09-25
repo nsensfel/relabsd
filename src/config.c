@@ -250,48 +250,14 @@ static int parse_timeout_option
    const char * const param
 )
 {
-   int valc, timeout_msec;
+   int timeout_msec;
    const int prev_errno = errno;
 
    conf->enable_timeout = 1;
 
    errno = 0;
 
-   valc = scanf(param, "%d", &timeout_msec);
-
-   if (valc == EOF)
-   {
-      if (errno == 0)
-      {
-         RELABSD_S_FATAL
-         (
-            "Unexpected end of file while reading timeout option."
-         );
-      }
-      else
-      {
-         RELABSD_FATAL
-         (
-            "An error occured while reading timeout option: %s.",
-            strerror(errno)
-         );
-      }
-
-      errno = prev_errno;
-
-      return -1;
-   }
-   else if (valc < 1)
-   {
-      RELABSD_S_FATAL
-      (
-         "Invalid parameter count for timeout option (1 int expected)."
-      );
-
-      errno = prev_errno;
-
-      return -1;
-   }
+   timeout_msec = atoi(param);
 
    if (timeout_msec <= 0)
    {
@@ -301,7 +267,10 @@ static int parse_timeout_option
          timeout_msec,
          INT_MAX
       );
+
+      return -1;
    }
+
    memset((void *) &(conf->timeout), 0, sizeof(struct timeval));
 
    conf->timeout.tv_sec = (time_t) (timeout_msec / 1000);
