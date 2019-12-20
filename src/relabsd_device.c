@@ -269,16 +269,6 @@ void relabsd_device_set_axes_to_zero
 )
 {
    int i;
-//   libevdev_uinput_write_event
-   relabsd_device_write_evdev_event
-   (
-//      dev->uidev,
-      dev,
-      EV_SYN,
-      SYN_REPORT,
-      0
-   );
-
 
    for (i = 0; i < RELABSD_VALID_AXES_COUNT; ++i)
    {
@@ -291,14 +281,12 @@ void relabsd_device_set_axes_to_zero
             relabsd_axis_to_abs((enum relabsd_axis) i),
             0
          );
-
-         /*
-          * Also send a SYN event when the axes have been modified.
-          */
-
       }
    }
 
+   /*
+    * Also send a SYN event when the axes have been modified.
+    */
    libevdev_uinput_write_event
    (
       dev->uidev,
