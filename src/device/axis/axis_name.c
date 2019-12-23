@@ -1,11 +1,24 @@
+/**** LIBEVDEV ****************************************************************/
 #include <libevdev/libevdev.h>
 
-#include "pervasive.h"
+/**** RELABSD *****************************************************************/
+#include <relabsd/debug.h>
 
-#include "axis.h"
-#include "error.h"
+#include <relabsd/util/string.h>
 
-enum relabsd_axis relabsd_axis_from_name (const char * const name)
+#include <relabsd/device/axis.h>
+
+/******************************************************************************/
+/**** LOCAL FUNCTIONS *********************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+/**** EXPORTED FUNCTIONS ******************************************************/
+/******************************************************************************/
+enum relabsd_axis_name relabsd_axis_parse_name
+(
+   const char name [const restrict static 1]
+)
 {
    if (RELABSD_STRING_EQUALS("X", name))
    {
@@ -43,7 +56,7 @@ enum relabsd_axis relabsd_axis_from_name (const char * const name)
    return RELABSD_UNKNOWN;
 }
 
-char * relabsd_axis_to_name (enum relabsd_axis const e)
+const char * relabsd_axis_name_to_string (const enum relabsd_axis_name e)
 {
    switch (e)
    {
@@ -83,10 +96,10 @@ char * relabsd_axis_to_name (enum relabsd_axis const e)
    return "..";
 }
 
-enum relabsd_axis relabsd_axis_convert_evdev_rel
+enum relabsd_axis_name relabsd_axis_name_and_evdev_abs_from_evdev_rel
 (
-   unsigned int const rel_code,
-   unsigned int * const abs_code
+   const unsigned int rel_code,
+   unsigned int abs_code [const restrict static 1]
 )
 {
    switch (rel_code)
@@ -128,7 +141,7 @@ enum relabsd_axis relabsd_axis_convert_evdev_rel
    }
 }
 
-unsigned int relabsd_axis_to_rel (enum relabsd_axis const e)
+unsigned int relabsd_axis_name_to_evdev_rel (const enum relabsd_axis_name e)
 {
    switch (e)
    {
@@ -159,7 +172,7 @@ unsigned int relabsd_axis_to_rel (enum relabsd_axis const e)
       case RELABSD_UNKNOWN:
          RELABSD_S_PROG_ERROR
          (
-            "relabsd_axis_to_rel(RELABSD_UNKNOWN) is forbidden."
+            "relabsd_axis_name_to_evdev_rel(RELABSD_UNKNOWN) is forbidden."
          );
          return REL_MAX;
 
@@ -167,12 +180,15 @@ unsigned int relabsd_axis_to_rel (enum relabsd_axis const e)
          break;
    }
 
-   RELABSD_S_PROG_ERROR("relabsd_axis_to_rel is missing at least 1 case.");
+   RELABSD_S_PROG_ERROR
+   (
+      "relabsd_axis_name_to_evdev_rel is missing at least 1 case."
+   );
 
    return REL_MAX;
 }
 
-unsigned int relabsd_axis_to_abs (enum relabsd_axis const e)
+unsigned int relabsd_axis_name_to_evdev_abs (const enum relabsd_axis_name e)
 {
    switch (e)
    {
@@ -219,7 +235,7 @@ unsigned int relabsd_axis_to_abs (enum relabsd_axis const e)
 /*
  * Returns the relabsd_axis equivalent of a EV_REL/EV_ABS code.
  */
-enum relabsd_axis relabsd_axis_from_rel (unsigned int const rel)
+enum relabsd_axis_name relabsd_axis_name_from_evdev_rel (const unsigned int rel)
 {
    switch (rel)
    {
@@ -251,7 +267,8 @@ enum relabsd_axis relabsd_axis_from_rel (unsigned int const rel)
          return RELABSD_UNKNOWN;
    }
 }
-enum relabsd_axis relabsd_axis_from_abs (unsigned int const abs)
+
+enum relabsd_axis_name relabsd_axis_name_from_evdev_abs (const unsigned int abs)
 {
    switch (abs)
    {

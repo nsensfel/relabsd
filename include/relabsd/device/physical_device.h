@@ -1,9 +1,6 @@
-#ifndef RELABSD_INPUT_H
-#define RELABSD_INPUT_H
+#pragma once
 
 #include <libevdev/libevdev.h>
-
-#include "config.h"
 
 struct relabsd_input
 {

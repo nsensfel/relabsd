@@ -1,34 +1,8 @@
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <stdio.h>
 
-#include <libevdev/libevdev-uinput.h>
-
-#include "error.h"
-#include "axis.h"
-#include "config.h"
-
-#include "relabsd_device.h"
-
-/*
-   LIBEVDEV_UINPUT_OPEN_MANAGED is not defined on my machines.
-   It is not my place to define it, so I'll avoid the issue by defining my own
-   constant.
-*/
-#ifndef LIBEVDEV_UINPUT_OPEN_MANAGED
-   #pragma message  "[WARNING] libevdev did not define "\
-      "LIBEVDEV_UINPUT_OPEN_MANAGED, using value '-2' instead."
-   #define RELABSD_UINPUT_OPEN_MANAGED -2
-#else
-   #define RELABSD_UINPUT_OPEN_MANAGED LIBEVDEV_UINPUT_OPEN_MANAGED
-#endif
 
 static void replace_rel_axes
 (
-   struct relabsd_device * const dev,
+   struct relabsd_virtual_device * const dev,
    const struct relabsd_config * const config
 )
 {
@@ -132,9 +106,9 @@ static int rename_device
    return 0;
 }
 
-int relabsd_device_create
+int relabsd_virtual_device_create
 (
-   struct relabsd_device * const dev,
+   struct relabsd_virtual_device * const dev,
    const struct relabsd_config * const config
 )
 {
@@ -208,7 +182,7 @@ int relabsd_device_create
    return 0;
 }
 
-void relabsd_device_destroy (const struct relabsd_device * const dev)
+void relabsd_virtual_device_destroy (const struct relabsd_virtual_device * const dev)
 {
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Destroying virtual device...");
 
@@ -216,9 +190,9 @@ void relabsd_device_destroy (const struct relabsd_device * const dev)
    libevdev_free(dev->dev);
 }
 
-int relabsd_device_write_evdev_event
+int relabsd_virtual_device_write_evdev_event
 (
-   const struct relabsd_device * const dev,
+   const struct relabsd_virtual_device * const dev,
    unsigned int const type,
    unsigned int const code,
    int const value
@@ -262,9 +236,9 @@ int relabsd_device_write_evdev_event
    return -1;
 }
 
-void relabsd_device_set_axes_to_zero
+void relabsd_virtual_device_set_axes_to_zero
 (
-   const struct relabsd_device * const dev,
+   const struct relabsd_virtual_device * const dev,
    const struct relabsd_config * const config
 )
 {
@@ -274,7 +248,7 @@ void relabsd_device_set_axes_to_zero
    {
       if (config->axis[i].enabled)
       {
-         relabsd_device_write_evdev_event
+         relabsd_virtual_device_write_evdev_event
          (
             dev,
             EV_ABS,

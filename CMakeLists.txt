@@ -7,8 +7,10 @@ include(FindPkgConfig)
 
 # ${SRC_FILES} is recursively defined in the subdirectories.
 # Each subdirectory adds only the source files that are present at its level.
-add_subdirectory(src)
+file(GLOB_RECURSE SRC_FILES src/ true *.c)
 add_executable(relabsd ${SRC_FILES})
+
+include_directories(include/)
 
 # Language parameters.
 enable_language(C)

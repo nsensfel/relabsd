@@ -1,10 +1,8 @@
-#ifndef RELABSD_ERROR_H
-#define RELABSD_ERROR_H
+#pragma once
 
 #include <stdio.h>
 
-#include "config.h"
-#include "pervasive.h"
+#include <relabsd/util/macro.h>
 
 #ifndef RELABSD_DEBUG_PROGRAM_FLOW
    #define RELABSD_DEBUG_PROGRAM_FLOW 0
@@ -22,10 +20,18 @@
    #define RELABSD_DEBUG_VIRTUAL_EVENTS 0
 #endif
 
+#ifndef RELABSD_ENABLE_WARNINGS_OUTPUT
 #define RELABSD_ENABLE_WARNINGS_OUTPUT              1
+#endif
+#ifndef RELABSD_ENABLE_RUNTIME_ERRORS_OUTPUT
 #define RELABSD_ENABLE_RUNTIME_ERRORS_OUTPUT        1
+#endif
+#ifndef RELABSD_ENABLE_PROGRAMMING_ERRORS_OUTPUT
 #define RELABSD_ENABLE_PROGRAMMING_ERRORS_OUTPUT    1
+#endif
+#ifndef RELABSD_ENABLE_FATAL_ERROR_OUTPUT
 #define RELABSD_ENABLE_FATAL_ERROR_OUTPUT           1
+#endif
 
 #ifdef RELABSD_ENABLE_ERROR_LOCATION
    #define RELABSD_LOCATION "[" __FILE__ "][" RELABSD_TO_STRING(__LINE__) "]"
@@ -137,5 +143,3 @@
          RELABSD_PRINT_S_STDERR("F", str);\
       }\
    )
-
-#endif

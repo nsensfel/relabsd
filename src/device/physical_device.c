@@ -79,9 +79,9 @@ static int device_is_compatible
    return 0;
 }
 
-int relabsd_input_open
+int relabsd_physical_device_open
 (
-   struct relabsd_input * const input,
+   struct relabsd_physical_device * const input,
    const struct relabsd_config * const conf
 )
 {
@@ -126,7 +126,7 @@ int relabsd_input_open
    return 0;
 }
 
-void relabsd_input_close (const struct relabsd_input * const input)
+void relabsd_physical_device_close (const struct relabsd_physical_device * const input)
 {
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Closing input device...");
 
@@ -134,9 +134,9 @@ void relabsd_input_close (const struct relabsd_input * const input)
    close(input->fd);
 }
 
-int relabsd_input_read
+int relabsd_physical_device_read
 (
-   const struct relabsd_input * const input,
+   const struct relabsd_physical_device * const input,
    unsigned int * const input_type,
    unsigned int * const input_code,
    int * const input_value
@@ -190,9 +190,9 @@ int relabsd_input_read
    return 0;
 }
 
-int relabsd_input_wait_for_next_event
+int relabsd_physical_device_wait_for_next_event
 (
-   const struct relabsd_input * const input,
+   const struct relabsd_physical_device * const input,
    const struct relabsd_config * const config
 )
 {
