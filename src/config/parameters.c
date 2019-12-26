@@ -18,16 +18,19 @@ static void print_usage (const char exec [const restrict static 1])
 {
    printf
    (
-      "USAGE: %s [<MODE>] [<OPTION>+]\n\n"
+      "USAGE: %s <MODE> [<OPTION>+]\n\n"
 
       "<MODE>:\n"
+      "\t[-? | --compatible] <physical_device_file>:\n"
+         "\t\tDevice compatibility test.\n\n"
+
       "\t[-c | --client] <server_file>:\n"
          "\t\tSends the commands to a given server instance.\n\n"
 
-      "\t[-s | --server] <server_file>:\n"
+      "\t[-s | --server] <server_file> <physical_device_file>:\n"
          "\t\tCreates a named server instance.\n\n"
 
-      "\t[-1 | --self]:\n"
+      "\t[-1 | --self] <physical_device_file>:\n"
          "\t\tCreates a unnamed server instance.\n\n"
 
       "<OPTION>:\n"
@@ -43,6 +46,10 @@ static void print_usage (const char exec [const restrict static 1])
       "\t[-a | --axis] <name> <min> <max> <fuzz> <flat> <resolution> "
          "<options>:\n"
          "\t\t(Re)defines an axis.\n\n"
+
+      "\t[-m | --mod-axis] <name> <min> <max> <fuzz> <flat> <resolution> "
+         "<signed_options>:\n"
+         "\t\tModifies an axis (use + and - signs for the options).\n\n"
 
       "\t[-f | --config] <config_file>"
          "<options>:\n"
@@ -79,12 +86,44 @@ static int parse_axis
 
    axis = (axes + axis_index);
 
-   axis->min = atoi(argv[1]);
-   axis->max = atoi(argv[2]);
-   axis->fuzz = atoi(argv[3]);
-   axis->flat = atoi(argv[4]);
-   axis->resolution = atoi(argv[5]);
+   if (relabsd_util_parse_int(argv[1], INT_MIN, INT_MAX, &(axis->min)) < 0)
+   {
+      RELABSD_FATAL("Invalid <min> value for axis \"%s\".", argv[0]);
 
+      return -1;
+   }
+
+   if (relabsd_util_parse_int(argv[2], INT_MIN, INT_MAX, &(axis->max)) < 0)
+   {
+      RELABSD_FATAL("Invalid <max> value for axis \"%s\".", argv[0]);
+
+      return -1;
+   }
+
+   if (relabsd_util_parse_int(argv[3], INT_MIN, INT_MAX, &(axis->fuzz)) < 0)
+   {
+      RELABSD_FATAL("Invalid <fuzz> value for axis \"%s\".", argv[0]);
+
+      return -1;
+   }
+
+   if (relabsd_util_parse_int(argv[4], INT_MIN, INT_MAX, &(axis->flat)) < 0)
+   {
+      RELABSD_FATAL("Invalid <flat> value for axis \"%s\".", argv[0]);
+
+      return -1;
+   }
+
+   if
+   (
+      relabsd_util_parse_int(argv[5], INT_MIN, INT_MAX, &(axis->resolution))
+      < 0
+   )
+   {
+      RELABSD_FATAL("Invalid <resolution> value for axis \"%s\".", argv[0]);
+
+      return -1;
+   }
 
    return 0;
 }
@@ -110,12 +149,23 @@ int relabsd_parameters_parse_execution_mode
 
    if
    (
+      RELABSD_STRING_EQUALS("-?", argv[1])
+      || RELABSD_STRING_EQUALS("--compatibility", argv[1])
+   )
+   {
+      params->mode = RELABSD_PARAMETERS_COMPATIBILITY_TEST_MODE;
+      params->physical_device_name = argv[2];
+      params->read_argc = 2;
+   }
+   else if
+   (
       RELABSD_STRING_EQUALS("-c", argv[1])
       || RELABSD_STRING_EQUALS("--client", argv[1])
    )
    {
       params->mode = RELABSD_PARAMETERS_CLIENT_MODE;
-      params->node = argv[2];
+      params->communication_node_name = argv[2];
+      params->physical_device_name = (char *) NULL;
       params->read_argc = 2;
    }
    else if
@@ -124,9 +174,10 @@ int relabsd_parameters_parse_execution_mode
       || RELABSD_STRING_EQUALS("--server", argv[1])
    )
    {
-      params->mode = RELABSD_PARAMETERS_CLIENT_MODE;
-      params->node = argv[2];
-      params->read_argc = 2;
+      params->mode = RELABSD_PARAMETERS_SERVER_MODE;
+      params->communication_node_name = argv[2];
+      params->physical_device_name = argv[3];
+      params->read_argc = 3;
    }
    else if
    (
@@ -135,8 +186,9 @@ int relabsd_parameters_parse_execution_mode
    )
    {
       params->mode = RELABSD_PARAMETERS_SERVER_MODE;
-      params->node = (char *) NULL;
-      params->read_argc = 1;
+      params->communication_node_name = (char *) NULL;
+      params->physical_device_name = argv[2];
+      params->read_argc = 2;
    }
    else
    {
@@ -163,7 +215,12 @@ int relabsd_parameters_parse_options
 
    set_default_options(params);
 
-   for (i = params->read_argc; i < argc; ++i)
+   /*
+    * i = (params->read_argc + 1) because reading 2 params is actually reaching
+    * the [2] element of the array, since the [0] element is the executable
+    * name.
+    */
+   for (i = (params->read_argc + 1); i < argc; ++i)
    {
       if
       (

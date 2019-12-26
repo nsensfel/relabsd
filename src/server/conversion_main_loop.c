@@ -163,3 +163,11 @@ int main (int argc, char ** argv)
    return 0;
 }
 */
+
+int relabsd_server_conversion_loop
+(
+   struct relabsd_server server [const static 1]
+)
+{
+   return 0;
+}

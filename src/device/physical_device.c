@@ -1,15 +1,14 @@
-#include <fcntl.h>
+/**** RELABSD *****************************************************************/
 #include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
 
+/**** LIBEVDEV ****************************************************************/
 #include <libevdev/libevdev.h>
 
-#include "error.h"
-#include "axis.h"
-#include "config.h"
-
-#include "input.h"
+/**** RELABSD *****************************************************************/
+#include <relabsd/debug.h>
 
 /*
  * Ensures that the input device has enabled the EV_REL axes mentioned

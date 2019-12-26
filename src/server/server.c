@@ -33,7 +33,7 @@ int initialize
    (
       relabsd_virtual_device_create
       (
-
+         relabsd_parameters_get_virtual_device_name(params),
          &(server->virtual_device)
       )
       < 0
@@ -56,14 +56,23 @@ int initialize
       return -3;
    }
 
+   if (relabsd_parameters_get_communication_node(params) != ((char *) NULL))
+   {
+      relabsd_server_create_communication_thread(&server);
+   }
+
    return 0;
 }
 
 void finalize (struct relabsd_server server [const static 1])
 {
-   if (relabsd_parameters_get_communication_node(params) != ((...) NULL))
+   if
+   (
+      relabsd_parameters_get_communication_node(server->parameters)
+      != ((char *) NULL)
+   )
    {
-      relabsd_server_join_communication_node(&server);
+      relabsd_server_join_communication_thread(&server);
    }
 
    relabsd_virtual_device_destroy(&(server->virtual_device));

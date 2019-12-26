@@ -1,14 +1,13 @@
 /**** POSIX *******************************************************************/
-#include <sys/types.h>
+#include <sys/stat.h>
 
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 /**** RELABSD *****************************************************************/
-#include <relabsd/config.h>
 #include <relabsd/debug.h>
-#include <relabsd/server.h>
-
-#include <relabsd/config/parameters.h>
 
 /******************************************************************************/
 /**** LOCAL FUNCTIONS *********************************************************/
@@ -26,10 +25,24 @@
  */
 int relabsd_server_create_daemon (void)
 {
+   int unnamed_pipe[2];
    pid_t proc_id;
 
+   errno = 0;
+
+   if (pipe(unnamed_pipe) == -1)
+   {
+      RELABSD_FATAL
+      (
+         "Unable to create an unnamed pipe for the daemon creation process: %s",
+         strerror(errno)
+      );
+
+      return -1;
+   }
+
    /* 1/ Close all open file descriptors ... **********************************/
-   /* None were opened at this point. */
+   /* None were opened at this point, except the pipe, which is still needed. */
 
    /* 2/ Reset all signal handlers ... ****************************************/
    /* Those were not modified at this point. */
@@ -57,10 +70,52 @@ int relabsd_server_create_daemon (void)
 
    if (proc_id != ((pid_t) 0))
    {
+      char buffer;
+
+      /* Close the writing end of the pipe, as this process does not use it */
+      errno = 0;
+
+      if (close(unnamed_pipe[1]) == -1)
+      {
+         RELABSD_ERROR
+         (
+            "Unable to close writing end of an unnamed pipe during the daemon"
+            " creation process: %s.",
+            strerror(errno)
+         );
+      }
+
       /* Awaiting step 14...*/
-      /* TODO: insert unnamed pipe */
+      errno = 0;
+
+      if (read(unnamed_pipe[0], &buffer, (size_t) 1) == -1)
+      {
+         RELABSD_ERROR
+         (
+            "Unable to read from reading end of an unnamed pipe during the "
+            " daemon creation process: %s.",
+            strerror(errno)
+         );
+      }
+
+      if (close(unnamed_pipe[0]) == -1)
+      {
+         RELABSD_ERROR
+         (
+            "Unable to close reading end of an unnamed pipe during the daemon"
+            " creation process: %s.",
+            strerror(errno)
+         );
+      }
+
       /* 15/ Original process exits *******************************************/
-      exit();
+      exit(0);
+   }
+
+   /* Close reading on the pipe, as this process does not use it */
+   if (close(unnamed_pipe[0]))
+   {
+
    }
 
    /* 6/ setsid() *************************************************************/
@@ -96,13 +151,26 @@ int relabsd_server_create_daemon (void)
 
    if (proc_id != ((pid_t) 0))
    {
+      if (close(unnamed_pipe[1]) == -1)
+      {
+         RELABSD_ERROR
+         (
+            "Unable to close writing end of an unnamed pipe during the daemon"
+            " creation process: %s.",
+            strerror(errno)
+         );
+      }
+
       /* 8/ First child process exits *****************************************/
-      exit();
+      exit(0);
    }
 
    /* 9/ /dev/null for standard input/outputs *********************************/
+   /* TODO. */
 
    /* 10/ reset umask to 0 ****************************************************/
+   /* Can't fail, returns previous mask. */
+   (void) umask(0);
 
    /* 11/ Set current directory to / ******************************************/
    errno = 0;
@@ -110,6 +178,13 @@ int relabsd_server_create_daemon (void)
    if (chdir("/") == -1)
    {
       // Can't print an error message at that point though...
+      RELABSD_FATAL
+      (
+         "Step 11 of the daemon creation process, fork(), failed: %s.",
+         strerror(errno)
+      );
+
+      /* TODO: boop main process. */
       return -1;
    }
 
@@ -117,10 +192,30 @@ int relabsd_server_create_daemon (void)
    /* Don't want to limit to a single instance. */
 
    /* 13/ Drop privileges *****************************************************/
+   /* We need those. */
 
    /* 14/ Signal completion ***************************************************/
+   if (write(unnamed_pipe[0], (void *) "!", (size_t) 1) == -1)
+   {
+      RELABSD_ERROR
+      (
+         "Unable to write to writing end of an unnamed pipe during the daemon"
+         " creation process: %s.",
+         strerror(errno)
+      );
+   }
 
    /* Step 15 is done on the very first process. */
+
+   if (close(unnamed_pipe[1]) == -1)
+   {
+      RELABSD_ERROR
+      (
+         "Unable to close writing end of an unnamed pipe during the daemon"
+         " creation process: %s.",
+         strerror(errno)
+      );
+   }
 
    return 0;
 }
