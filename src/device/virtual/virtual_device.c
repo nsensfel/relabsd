@@ -1,25 +1,57 @@
+/**** POSIX *******************************************************************/
+#include <sys/stat.h>
 
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
 
+/**** LIBEVDEV ****************************************************************/
+#include <libevdev/libevdev.h>
+#include <libevdev/libevdev-uinput.h>
+
+/**** RELABSD *****************************************************************/
+#include <relabsd/config/parameters.h>
+
+#include <relabsd/debug.h>
+
+#include <relabsd/device/axis.h>
+#include <relabsd/device/virtual_device.h>
+
+/******************************************************************************/
+/**** LOCAL FUNCTIONS *********************************************************/
+/******************************************************************************/
 static void replace_rel_axes
 (
-   struct relabsd_virtual_device * const dev,
-   const struct relabsd_config * const config
+   const struct relabsd_parameters parameters [const restrict static 1],
+   const struct relabsd_virtual_device device [const restrict static 1]
 )
 {
    int i;
-   struct input_absinfo absinfo;
-   unsigned int abs_code, rel_code;
-
-   for (i = RELABSD_VALID_AXES_COUNT; i --> 0;)
+   for (i = 0; i < RELABSD_VALID_AXES_COUNT; i++)
    {
       if (config->axis[i].enabled)
       {
-         rel_code = relabsd_axis_to_rel((enum relabsd_axis) i);
-         abs_code = relabsd_axis_to_abs((enum relabsd_axis) i);
+         struct input_absinfo absinfo;
+
 
          relabsd_config_get_absinfo(config, (enum relabsd_axis) i, &absinfo);
-         libevdev_disable_event_code(dev->dev, EV_REL, rel_code);
-         libevdev_enable_event_code(dev->dev, EV_ABS, abs_code, &absinfo);
+
+         /* TODO: report failure? 0 on success, -1 otherwise, no cause given. */
+         (void) libevdev_disable_event_code
+         (
+            device->libevdev,
+            EV_REL,
+            relabsd_axis_to_rel((enum relabsd_axis) i);
+         );
+
+         (void) libevdev_enable_event_code
+         (
+            device->libevdev,
+            EV_ABS,
+            relabsd_axis_to_abs((enum relabsd_axis) i);
+            &absinfo
+         );
       }
    }
 
@@ -27,8 +59,8 @@ static void replace_rel_axes
 
 static int rename_device
 (
-   struct libevdev * const dev,
-   const struct relabsd_config * const config
+   const struct relabsd_parameters parameters [const restrict static 1],
+   const struct relabsd_virtual_device device [const restrict static 1]
 )
 {
    size_t new_name_size;
@@ -38,22 +70,20 @@ static int rename_device
    /* +2: One for the \0, one for the space between prefix and 'real_name'. */
    new_name_size = strlen(RELABSD_DEVICE_PREFIX) + 2;
 
-   if (config->device_name == (char *) NULL)
+   real_name = relabsd_parameters_get_device_name(parameters);
+
+   if (real_name == (const char *) NULL)
    {
-      /* XXX
+      /*
        * "The name is never NULL but it may be the empty string."
        * I'm assuming that since they use the term 'string', it is \0
        * terminated.
        */
       real_name = libevdev_get_name(dev);
    }
-   else
-   {
-      real_name = config->device_name;
-   }
 
    new_name_size += strlen(real_name);
-
+   errno = 0;
    new_name = (char *) calloc(new_name_size, sizeof(char));
 
    if (new_name == (char *) NULL)
@@ -70,6 +100,8 @@ static int rename_device
 
       return -1;
    }
+
+   errno = 0;
 
    if
    (
@@ -101,156 +133,197 @@ static int rename_device
 
    /* This frees whatever came from 'libevdev_get_name'. */
    libevdev_set_name(dev, new_name);
+
+   /* FIXME: not entirely sure I should be the one to free it. */
    free((void *) new_name);
 
    return 0;
 }
 
-int relabsd_virtual_device_create
+/******************************************************************************/
+/**** EXPORTED FUNCTIONS ******************************************************/
+/******************************************************************************/
+int relabsd_virtual_device_create_from
 (
-   struct relabsd_virtual_device * const dev,
-   const struct relabsd_config * const config
+   const struct relabsd_parameters parameters [const restrict static 1],
+   struct relabsd_virtual_device device [const restrict static 1]
 )
 {
-   int fd;
+   struct libevdev * physical_device_libevdev;
+   int physical_device_file;
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Creating virtual device...");
 
-   fd = open(config->input_file, O_RDONLY);
+   errno = 0;
+   physical_device_file =
+      open
+      (
+         relabsd_parameters_get_physical_device_file_name(parameters),
+         O_RDONLY
+      );
 
-   if (fd < 0)
+   if (physical_device_file == -1)
    {
       RELABSD_FATAL
       (
-         "Could not open device '%s' in read only mode: %s.",
-         config->input_file,
+         "Could not open physical device '%s' in read only mode: %s.",
+         relabsd_parameters_get_physical_device_file_name(parameters),
          strerror(errno)
       );
 
       return -1;
    }
 
-   if (libevdev_new_from_fd(fd, &(dev->dev)) < 0)
+   err = libevdev_new_from_fd(physical_device_file, &physical_device_libevdev);
+
+   if (err != 0)
    {
       RELABSD_FATAL
       (
-         "libevdev could not open '%s': '%s'.",
-         config->input_file,
-         strerror(errno)
+         "libevdev could not open physical device '%s': %s.",
+         relabsd_parameters_get_physical_device_file_name(parameters),
+         strerror(-err)
       );
 
-      close(fd);
+      (void) close(device->file);
 
       return -1;
    }
 
-   if (rename_device(dev->dev, config) < 0)
-   {
-      libevdev_free(dev->dev);
-      close(fd);
+   /* Not exactly fatal, is it? */
+   (void) rename_device(parameters, physical_device_libevdev);
 
-      return -1;
-   }
+   libevdev_enable_event_type(physical_device_libevdev, EV_ABS);
 
-   libevdev_enable_event_type(dev->dev, EV_ABS);
+   replace_rel_axes(parameters, physical_device_libevdev);
 
-   replace_rel_axes(dev, config);
 
-   if
-   (
-       libevdev_uinput_create_from_device
-       (
-         dev->dev,
+   err =
+      libevdev_uinput_create_from_device
+      (
+         physical_device_libevdev,
          /* See top of the file. */
          RELABSD_UINPUT_OPEN_MANAGED,
-         &(dev->uidev)
-       )
-       < 0
-   )
+         &(device->uinput_device)
+      );
+
+   if (err !=  0)
    {
-      RELABSD_FATAL("Could not create relabsd device: %s.", strerror(errno));
+      RELABSD_FATAL("Could not create uinput device: %s.", strerror(-err));
 
-      libevdev_free(dev->dev);
+      libevdev_free(physical_device_libevdev);
 
-      close(fd);
+      (void) close(physical_device_file);
 
       return -1;
    }
 
-   close(fd);
+   /* For future modifications. */
+   device->libevdev = physical_device_libevdev;
+
+   /*
+    * We only need the physical device's (now modified) profile, not to actually
+    * read from it.
+    */
+   errno = 0;
+
+   if (close(physical_device_file) == -1)
+   {
+      RELABSD_ERROR("Could not close physical device: %s". strerror(errno));
+   }
+
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Created virtual device.");
 
    return 0;
 }
 
-void relabsd_virtual_device_destroy (const struct relabsd_virtual_device * const dev)
+void relabsd_virtual_device_destroy
+(
+   const struct relabsd_virtual_device device [const restrict static 1]
+)
 {
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Destroying virtual device...");
 
-   libevdev_uinput_destroy(dev->uidev);
-   libevdev_free(dev->dev);
+   libevdev_uinput_destroy(device->uinput_device);
+   libevdev_free(device->libevdev);
+
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Destroyed virtual device.");
 }
 
 int relabsd_virtual_device_write_evdev_event
 (
-   const struct relabsd_virtual_device * const dev,
+   const struct relabsd_virtual_device device [const restrict static 1],
    unsigned int const type,
    unsigned int const code,
    int const value
 )
 {
+   int err;
+
    RELABSD_DEBUG
    (
       RELABSD_DEBUG_VIRTUAL_EVENTS,
       "Sending event: {type = %s; code = %s; value = %d}.",
-       libevdev_event_type_get_name(type),
-       libevdev_event_code_get_name(type, code),
-       value
+      libevdev_event_type_get_name(type),
+      libevdev_event_code_get_name(type, code),
+      value
    );
 
    /*
-    * We'll also send the 'EV_SYN' events when we receive them from the input
+    * "It is the caller's responsibility that any event sequence is terminated
+    * with an EV_SYN/SYN_REPORT/0 event. Otherwise, listeners on the device node
+    * will not see the events until the next EV_SYN event is posted."
+    * We'll simply send the 'EV_SYN' events when we read them from the physical
     * device.
-    * OPTIMIZE: prevent 'EV_SYN' from being sent if we haven't sent any new
-    *           values. (It might not be worth it though)
     */
-   if (libevdev_uinput_write_event(dev->uidev, type, code, value) == 0)
-   {
-      /* FIXME:
-       * Why does activating the timeout trigger the EV_KEYS event to not be
-       * followed by EV_SYN?
-       */
-      if (type == EV_KEY)
-      {
-         libevdev_uinput_write_event
-         (
-            dev->uidev,
-            EV_SYN,
-            SYN_REPORT,
-            0
-         );
-      }
+   err = libevdev_uinput_write_event(device->uinput_device, type, code, value);
 
-      return 0;
+   if (err != 0)
+   {
+      RELABSD_ERROR
+      (
+         "Unable to generate event {type = %s; code = %s; value = %d}: %s.",
+         libevdev_event_type_get_name(type),
+         libevdev_event_code_get_name(type, code),
+         value,
+         strerror(-err)
+      );
+
+      return -1;
    }
 
-   return -1;
+   /*
+    * TODO: check if this is needed.
+   if (type == EV_KEY)
+   {
+      libevdev_uinput_write_event
+      (
+         dev->uidev,
+         EV_SYN,
+         SYN_REPORT,
+         0
+      );
+   }
+   */
+
+   return 0;
 }
 
 void relabsd_virtual_device_set_axes_to_zero
 (
-   const struct relabsd_virtual_device * const dev,
-   const struct relabsd_config * const config
+   const struct relabsd_parameters parameters [const restrict static 1],
+   const struct relabsd_virtual_device device [const restrict static 1]
 )
 {
    int i;
 
    for (i = 0; i < RELABSD_VALID_AXES_COUNT; ++i)
    {
-      if (config->axis[i].enabled)
+      if (parameters->axis[i].enabled)
       {
          relabsd_virtual_device_write_evdev_event
          (
-            dev,
+            device,
             EV_ABS,
             relabsd_axis_to_abs((enum relabsd_axis) i),
             0
@@ -261,12 +334,14 @@ void relabsd_virtual_device_set_axes_to_zero
    /*
     * Also send a SYN event when the axes have been modified.
     */
-   libevdev_uinput_write_event
+   i =
+      libevdev_uinput_write_event(device->uinput_device, EV_SYN, SYN_REPORT, 0);
+
+   RELABSD_ERROR
    (
-      dev->uidev,
-      EV_SYN,
-      SYN_REPORT,
-      0
+      "Unable to generate event {type = EV_SYN; code = SYN_REPORT; value = 0}:"
+      " %s.",
+      strerror(-i)
    );
 }
 

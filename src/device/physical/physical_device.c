@@ -187,12 +187,28 @@ int relabsd_physical_device_read
       libevdev_next_event
       (
          device->libevdev,
-         device->is_late ? LIBEVDEV_READ_FLAG_SYNC : LIBEVDEV_READ_FLAG_NORMAL,
+         (
+            (
+               /*
+                * If we were already late, reading in NORMAL mode discards all
+                * the outdated input events, whereas reading in SYNC mode goes
+                * through them in order.
+                * TODO: add an option to allow users to drop events when late.
+                */
+               device->is_late ?
+               LIBEVDEV_READ_FLAG_SYNC
+               : LIBEVDEV_READ_FLAG_NORMAL
+            )
+            /* "The fd is not in O_NONBLOCK and a read may block." */
+            | LIBEVDEV_READ_FLAG_BLOCKING
+         )
+         ,
          &event
       );
 
    switch (returned_code)
    {
+      /* Read an actual input. */
       case LIBEVDEV_READ_STATUS_SUCCESS:
          RELABSD_DEBUG
          (
@@ -207,14 +223,28 @@ int relabsd_physical_device_read
          *input_code = event.code;
          *input_value = event.value;
 
-         return 1;
-
-      case LIBEVDEV_READ_STATUS_SYNC:
-         /* There are old events waiting to be read. */
-         device->is_late = 1;
-
          return 0;
 
+      /* Code indicating that we are late. */
+      case LIBEVDEV_READ_STATUS_SYNC:
+         /* There are old input events waiting to be read. */
+         device->is_late = 1;
+         /*
+          * From the documentation, the event we just read was an EV_SYN one,
+          * so we don't actually have any input event in hand.
+          */
+
+         /* FIXME: Really make sure this cannot recurse a second time. */
+         return
+            relabsd_physical_device_read
+            (
+               device,
+               input_type,
+               input_code,
+               input_value
+            );
+
+      /* No event to read. */
       case -EAGAIN:
          device->is_late = 0;
 
