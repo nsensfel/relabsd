@@ -2,10 +2,10 @@
 
 #include <libevdev/libevdev.h>
 
-struct relabsd_input
+struct relabsd_physical_device
 {
-   struct libevdev * dev;
-   int fd;
+   struct libevdev * libevdev;
+   int file;
    int timed_out;
 };
 
@@ -13,17 +13,20 @@ struct relabsd_input
  * Returns -1 on (fatal) error,
  *         0  on success.
  *
- * 'input' does not need to be initialized, as the function will to that for
+ * 'device' does not need to be initialized, as the function will to that for
  * you (on success).
  * On success, 'input' will need to be closed.
  */
-int relabsd_input_open
+int relabsd_physical_device_open
 (
-   struct relabsd_input * const input,
-   const struct relabsd_config * const conf
+   const char filename [const restrict static 1],
+   struct relabsd_physical_device device [const restrict static 1]
 );
 
-void relabsd_input_close (const struct relabsd_input * const input);
+void relabsd_physical_device_close
+(
+   const struct relabsd_physical_device device [const restrict static 1]
+);
 
 /*
  * Returns -1 on (warning) error,
@@ -33,18 +36,15 @@ void relabsd_input_close (const struct relabsd_input * const input);
  * do that for you (on success).
  * Requires 'input' to be open.
  */
-int relabsd_input_read
+int relabsd_physical_device_read
 (
-   const struct relabsd_input * const input,
-   unsigned int * const input_type,
-   unsigned int * const input_code,
-   int * const input_value
+   const struct relabsd_physical_device device [const restrict static 1],
+   unsigned int input_type [const restrict static 1],
+   unsigned int input_code [const restrict static 1],
+   int input_value [const restrict static 1]
 );
 
-int relabsd_input_wait_for_next_event
+int relabsd_physical_device_is_late
 (
-   const struct relabsd_input * const input,
-   const struct relabsd_config * const config
+   const struct relabsd_physical_device device [const restrict static 1]
 );
-
-#endif

@@ -10,15 +10,6 @@
 #include "input.h"
 #include "relabsd_device.h"
 
-static int RELABSD_RUN = 1;
-
-static void interrupt (int unused_mandatory_parameter)
-{
-   RELABSD_RUN = 0;
-
-   RELABSD_S_WARNING("Interrupted, will exit at the next input device event.");
-}
-
 static void handle_relative_axis_event
 (
    struct relabsd_config * const conf,
@@ -108,66 +99,94 @@ static void convert_input
    }
 }
 
-static int set_signal_handlers ()
-{
-   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Setting signal handlers.");
-
-   if (signal(SIGINT, interrupt) == SIG_ERR)
-   {
-      RELABSD_S_FATAL("Unable to set the SIGINT signal handler.");
-
-      return -1;
-   }
-
-   return 0;
-}
-
-/*
-int main (int argc, char ** argv)
-{
-   struct relabsd_config conf;
-   struct relabsd_input input;
-   struct relabsd_device dev;
-
-   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "relabsd started.");
-
-   if (set_signal_handlers() < 0)
-   {
-      return -1;
-   }
-
-   if (relabsd_config_parse(&conf, argc, argv) < 0)
-   {
-      return -2;
-   }
-
-   if (relabsd_input_open(&input, &conf) < 0)
-   {
-      return -3;
-   }
-
-   if (relabsd_device_create(&dev, &conf) < 0)
-   {
-      return -4;
-   }
-
-   convert_input(&conf, &input, &dev);
-
-   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Terminating...");
-
-   relabsd_device_destroy(&dev);
-   relabsd_input_close(&input);
-
-   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Done.");
-
-   return 0;
-}
-*/
-
 int relabsd_server_conversion_loop
 (
    struct relabsd_server server [const static 1]
 )
 {
    return 0;
+}
+
+
+int wait_for_next_event
+(
+   const struct relabsd_physical_device * const input,
+   const struct relabsd_config * const config
+)
+{
+   int ready_fds;
+   const int old_errno = errno;
+   fd_set ready_to_read;
+   struct timeval curr_timeout;
+
+   FD_ZERO(&ready_to_read);
+   FD_SET(input->fd, &ready_to_read);
+
+   /* call to select may alter timeout */
+   memcpy
+   (
+      (void *) &(curr_timeout),
+      (const void *) &(config->timeout),
+      sizeof(struct timeval)
+   );
+
+   errno = 0;
+
+   RELABSD_S_ERROR
+   (
+      "Waiting for input to be ready..."
+   );
+
+   ready_fds = select
+   (
+      (input->fd + 1),
+      &ready_to_read,
+      (fd_set *) NULL,
+      (fd_set *) NULL,
+      (input->timed_out) ? NULL : &(curr_timeout)
+   );
+
+   if (errno != 0)
+   {
+      RELABSD_ERROR
+      (
+         "Unable to wait for timeout: %s (errno: %d).",
+         strerror(errno),
+         errno
+      );
+
+      if (errno == EINTR)
+      {
+         /* Signal interruption? */
+      }
+      else
+      {
+         /* TODO: error message */
+      }
+
+      errno = old_errno;
+
+      return -1;
+   }
+
+   if (ready_fds == -1)
+   {
+      /* TODO: error message */
+
+      RELABSD_S_ERROR
+      (
+         "Unable to wait for timeout, yet errno was not set to anything."
+      );
+
+      errno = old_errno;
+
+      return -1;
+   }
+
+   RELABSD_ERROR
+   (
+      "Input is ready, ready_fds = %d", ready_fds
+   );
+
+   return ready_fds;
 }

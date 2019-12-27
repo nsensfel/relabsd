@@ -23,7 +23,6 @@ void * posix_main_loop (void * params)
 /******************************************************************************/
 /**** EXPORTED FUNCTIONS ******************************************************/
 /******************************************************************************/
-
 int relabsd_server_create_communication_thread
 (
    struct relabsd_server server [const static 1]
