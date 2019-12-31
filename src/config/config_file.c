@@ -1,3 +1,4 @@
+/**** POSIX *******************************************************************/
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -6,37 +7,26 @@
 
 #include <sys/time.h>
 
-#include "error.h"
-#include "pervasive.h"
-#include "axis.h"
-#include "config.h"
+/**** RELABSD *****************************************************************/
+#include <relabsd/debug.h>
+
+#include <relabsd/config/config_file.h>
 
 #ifndef RELABSD_OPTION_MAX_SIZE
    #define RELABSD_OPTION_MAX_SIZE 64
 #endif
-/*
- * "errno is never set to zero by any system call or library function."
- * This file makes use of this, by setting it to zero and checking if
- * it was modified after calling an function (I'm guessing this is common
- * practice, but I think it's worth explaining).
- * Following the principle of least astonishment, if a function sets errno to
- * zero, it will not return before setting it back either to its previous
- * value or to a arbitrary nonzero value.
- */
 
+/******************************************************************************/
+/**** LOCAL FUNCTIONS *********************************************************/
+/******************************************************************************/
 /*
  * Returns -1 on (fatal) error,
  *          0 on EOF,
  *          1 on newline.
  */
-static int reach_next_line_or_eof (FILE * const f)
+static int reach_next_line_or_eof (FILE f [const restrict static 1])
 {
-   int prev_errno;
    char c;
-
-   prev_errno = errno;
-
-   errno = 0;
 
    c = (char) getc(f);
 
@@ -45,20 +35,21 @@ static int reach_next_line_or_eof (FILE * const f)
       c = (char) getc(f);
    }
 
-   if (errno != 0)
+   if (ferror(f))
    {
-      RELABSD_FATAL
+      /*
+       * The 'ferror' function's manual specifically states that it does not
+       * sets errno. There is no mention of errno in the 'getc' function's
+       * either, so I am assuming that errno cannot be used to indicate the
+       * error.
+       */
+      RELABSD_S_FATAL
       (
-         "[CONFIG] Error while attempting to reach EOF or next line: %s.",
-         strerror(errno)
+         "[CONFIG] Error while attempting to reach EOF or next line: %s."
       );
-
-      errno = prev_errno;
 
       return -1;
    }
-
-   errno = prev_errno;
 
    if (c == EOF)
    {
@@ -643,6 +634,7 @@ static int parse_options
 
    return 0;
 }
+
 int relabsd_config_parse
 (
    struct relabsd_config * const conf,
@@ -681,106 +673,6 @@ int relabsd_config_parse
    return 0;
 }
 
-static int direct_filter
-(
-   struct relabsd_config_axis * const axis,
-   int * const value
-)
-{
-   if (abs(*value - axis->previous_value) <= axis->fuzz)
-   {
-      if (axis->option[RELABSD_REAL_FUZZ_OPTION])
-      {
-         axis->previous_value = *value;
-      }
-
-      return -1;
-   }
-
-   if (*value < axis->min)
-   {
-      *value = axis->min;
-   }
-   else if (*value > axis->max)
-   {
-      *value = axis->max;
-   }
-   else if (abs(*value) <= axis->flat)
-   {
-      *value = 0;
-   }
-
-   if (*value == axis->previous_value)
-   {
-      return -1;
-   }
-
-   axis->previous_value = *value;
-
-   return 1;
-}
-
-static int rel_to_abs_filter
-(
-   struct relabsd_config_axis * const axis,
-   int * const value
-)
-{
-   long int guard;
-
-   guard = (((long int) axis->previous_value) + ((long int) *value));
-
-   if (guard < ((long int) INT_MIN))
-   {
-      guard = ((long int) INT_MIN);
-   }
-   else if (guard > ((long int) INT_MAX))
-   {
-      guard = ((long int) INT_MAX);
-   }
-
-   *value = (int) guard;
-
-   if (axis->option[RELABSD_FRAMED_OPTION])
-   {
-      if (*value < axis->min)
-      {
-         *value = axis->min;
-      }
-      else if (*value > axis->max)
-      {
-         *value = axis->max;
-      }
-
-      if (*value == axis->previous_value)
-      {
-         return 0;
-      }
-
-      axis->previous_value = *value;
-
-      return 1;
-   }
-   else
-   {
-      if (*value == axis->previous_value)
-      {
-         return 0;
-      }
-
-      axis->previous_value = *value;
-
-      if ((*value < axis->min) || (*value > axis->max))
-      {
-         return 0;
-      }
-      else
-      {
-         return 1;
-      }
-   }
-}
-
 int relabsd_config_filter
 (
    struct relabsd_config * const conf,
@@ -805,6 +697,9 @@ int relabsd_config_filter
    }
 }
 
+/******************************************************************************/
+/**** EXPORTED FUNCTIONS ******************************************************/
+/******************************************************************************/
 void relabsd_config_get_absinfo
 (
    const struct relabsd_config * const conf,

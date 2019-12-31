@@ -8,19 +8,19 @@
 /******************************************************************************/
 /**** LOCAL FUNCTIONS *********************************************************/
 /******************************************************************************/
-int initialize
+static int initialize
 (
    struct relabsd_server server [const restrict static 1],
-   struct relabsd_parameters params [const static 1]
+   struct relabsd_parameters parameters [const static 1]
 )
 {
-   server->parameters = params;
+   server->parameters = parameters;
 
    if
    (
       relabsd_physical_device_open
       (
-         relabsd_parameters_get_physical_device_name(params),
+         relabsd_parameters_get_physical_device_name(parameters),
          &(server->physical_device)
       )
       < 0
@@ -29,15 +29,7 @@ int initialize
       return -1;
    }
 
-   if
-   (
-      relabsd_virtual_device_create
-      (
-         relabsd_parameters_get_virtual_device_name(params),
-         &(server->virtual_device)
-      )
-      < 0
-   )
+   if (relabsd_virtual_device_create(parameters, &(server->virtual_device)) < 0)
    {
       relabsd_physical_device_close(&(server->physical_device));
 
@@ -46,8 +38,11 @@ int initialize
 
    if
    (
-      (relabsd_parameters_get_communication_node(params) != ((...) NULL))
-      && (relabsd_server_spawn_communication_node(server) < 0)
+      (
+         relabsd_parameters_get_communication_node_name(parameters)
+         != ((char *) NULL)
+      )
+      && (relabsd_server_create_communication_thread(&server) < 0)
    )
    {
       relabsd_virtual_device_destroy(&(server->virtual_device));
@@ -56,19 +51,14 @@ int initialize
       return -3;
    }
 
-   if (relabsd_parameters_get_communication_node(params) != ((char *) NULL))
-   {
-      relabsd_server_create_communication_thread(&server);
-   }
-
    return 0;
 }
 
-void finalize (struct relabsd_server server [const static 1])
+static void finalize (struct relabsd_server server [const static 1])
 {
    if
    (
-      relabsd_parameters_get_communication_node(server->parameters)
+      relabsd_parameters_get_communication_node_name(server->parameters)
       != ((char *) NULL)
    )
    {
@@ -77,8 +67,6 @@ void finalize (struct relabsd_server server [const static 1])
 
    relabsd_virtual_device_destroy(&(server->virtual_device));
    relabsd_physical_device_close(&(server->physical_device));
-
-   return 0;
 }
 
 /******************************************************************************/
@@ -88,33 +76,32 @@ int relabsd_server
 (
    const int argc,
    const char * const argv [const restrict static argc],
-   struct relabsd_parameters params [const static 1]
+   struct relabsd_parameters parameters [const static 1]
 )
 {
    struct relabsd_server server;
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Started server mode.");
 
-   if (relabsd_parameters_parse_options(argc, argv, params) < 0)
+   if (relabsd_parameters_parse_options(argc, argv, parameters) < 0)
    {
       return -1;
    }
 
    if
    (
-      (relabsd_parameters_run_as_daemon(params))
+      relabsd_parameters_get_run_as_daemon(parameters)
       && (relabsd_server_create_daemon() < 0)
    )
    {
       return -2;
    }
 
-   (void) initialize(&server, params);
+   (void) initialize(&server, parameters);
 
    (void) relabsd_server_conversion_loop(&server);
 
    finalize(&server);
-
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Completed server mode.");
 

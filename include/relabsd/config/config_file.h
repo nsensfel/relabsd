@@ -3,20 +3,12 @@
 
 #include <libevdev/libevdev.h>
 
-#include "axis.h"
-
 /* Maximum length for a axis code. */
 #define RELABSD_CONF_AXIS_CODE_SIZE 2
 
 /* Number of options that can be configured. */
 #define RELABSD_OPTIONS_COUNT 3
 
-enum relabsd_option
-{
-   RELABSD_DIRECT_OPTION,
-   RELABSD_REAL_FUZZ_OPTION,
-   RELABSD_FRAMED_OPTION
-};
 
 struct relabsd_config_axis
 {

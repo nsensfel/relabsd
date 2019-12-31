@@ -1,30 +1,6 @@
 #pragma once
 
-/* Number of axes that can be configured. */
-#define RELABSD_AXIS_AXES_COUNT 8
-
-enum relabsd_axis_name
-{
-   RELABSD_X,
-   RELABSD_Y,
-   RELABSD_Z,
-   RELABSD_RX,
-   RELABSD_RY,
-   RELABSD_RZ,
-   RELABSD_WHEEL,
-   RELABSD_MISC,
-   RELABSD_UNKNOWN
-};
-
-struct relabsd_axis
-{
-   int min;
-   int max;
-   int fuzz;
-   int flat;
-   int resolution;
-   int flags;
-};
+#include <relabsd/device/axis_types.h>
 
 /*
  * Gives the relabsd_axis and EV_ABS event code equivalent to an EV_REL event

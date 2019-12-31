@@ -20,8 +20,8 @@
 /******************************************************************************/
 static int open_socket
 (
-   FILE * s [const restrict static 1],
-   const char socket_name [const restrict static 1]
+   const char socket_name [const restrict static 1],
+   FILE * s [const restrict static 1]
 )
 {
    const int old_errno = errno;
@@ -113,9 +113,16 @@ static int send_commands
          // TODO: error
       }
 
+      if (relabsd_parameters_argument_count_for(argv[i], &j) < 0)
+      {
+         RELABSD_FATAL("Unknown option '%s'.", argv[i]);
+         relabsd_parameters_print_usage(argv[0]);
+
+         return -1;
+      }
+
       for
       (
-         j = relabsd_parameters_argument_count_for(argv[i]),
          i++;
          ((j > 0) && (i < argc));
          j++, i--
@@ -161,14 +168,22 @@ int relabsd_client
 (
    const int argc,
    const char * argv [const restrict static argc],
-   struct relabsd_parameters params [const restrict static 1]
+   struct relabsd_parameters parameters [const restrict static 1]
 )
 {
    FILE * socket;
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Started client mode.");
 
-   if (open_socket(&socket, relabsd_parameters_get_node(params)) < 0)
+   if
+   (
+      open_socket
+      (
+         relabsd_parameters_get_communication_node_name(parameters),
+         &socket
+      )
+      < 0
+   )
    {
       return -1;
    }
