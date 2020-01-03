@@ -16,3 +16,10 @@ int relabsd_util_parse_int
    const int max,
    int output [const restrict static 1]
 );
+
+/*
+ * Returns -1 on error,
+ *          0 on EOF,
+ *          1 on newline.
+ */
+int relabsd_util_reach_next_line_or_eof (FILE f [const restrict static 1]);

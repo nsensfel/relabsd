@@ -1,3 +1,7 @@
+/**** POSIX *******************************************************************/
+#include <stdlib.h>
+#include <limits.h>
+
 /**** RELABSD *****************************************************************/
 #include <relabsd/device/axis.h>
 
@@ -6,13 +10,13 @@
 /******************************************************************************/
 static int direct_filter
 (
-   struct relabsd_config_axis * const axis,
-   int * const value
+   struct relabsd_axis axis [const restrict static 1],
+   int value [const restrict static 1]
 )
 {
    if (abs(*value - axis->previous_value) <= axis->fuzz)
    {
-      if (axis->option[RELABSD_REAL_FUZZ_OPTION])
+      if (axis->flags[RELABSD_REAL_FUZZ])
       {
          axis->previous_value = *value;
       }
@@ -45,8 +49,8 @@ static int direct_filter
 
 static int rel_to_abs_filter
 (
-   struct relabsd_config_axis * const axis,
-   int * const value
+   struct relabsd_axis axis [const restrict static 1],
+   int value [const restrict static 1]
 )
 {
    long int guard;
@@ -64,7 +68,7 @@ static int rel_to_abs_filter
 
    *value = (int) guard;
 
-   if (axis->option[RELABSD_FRAMED_OPTION])
+   if (axis->flags[RELABSD_FRAMED])
    {
       if (*value < axis->min)
       {
@@ -115,12 +119,12 @@ int relabsd_axis_filter_new_value
 {
    if (!(axis->is_enabled))
    {
-      return;
+      return 0;
    }
 
    /* TODO: handle conf->axis[axis].resolution */
 
-   if (axis->flag[RELABSD_DIRECT_OPTION])
+   if (axis->flags[RELABSD_DIRECT])
    {
       return direct_filter(axis, value);
    }

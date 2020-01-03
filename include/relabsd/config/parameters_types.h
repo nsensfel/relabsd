@@ -18,5 +18,6 @@ struct relabsd_parameters
    const char * device_name;
    const char * physical_device_file_name;
    const char * configuration_file;
-   struct relabsd_axis axes[RELABSD_AXIS_VALID_AXES_COUNT]
+   int timeout; /* TODO: use time structure + enabled flag */
+   struct relabsd_axis axes[RELABSD_AXIS_VALID_AXES_COUNT];
 };

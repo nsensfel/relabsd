@@ -52,3 +52,16 @@ enum relabsd_axis_name relabsd_axis_parse_name
  * Returned values should be coherent with the configuration file syntax.
  */
 const char * relabsd_axis_name_to_string (const enum relabsd_axis_name e);
+
+/*
+ * Returns -1 if the option was discarded (an error has been reported),
+ *         0 if the option was successfully parsed.
+ */
+int relabsd_axis_enable_option_from_name
+(
+   const char option_name [const restrict static 1],
+   const char axis_name [const restrict static 1],
+   struct relabsd_axis axis [const restrict static 1]
+);
+
+void relabsd_axis_enable (struct relabsd_axis axis [const restrict static 1]);

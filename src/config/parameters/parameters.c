@@ -17,11 +17,11 @@
 static int parse_axis
 (
    const int argc,
-   const char * argv [const restrict static argc],
-   struct relabsd_axis axes [const restrict static RELABSD_AXIS_AXES_COUNT]
+   const char * const argv [const restrict static argc],
+   struct relabsd_axis axes [const static RELABSD_AXIS_VALID_AXES_COUNT]
 )
 {
-   enum relabsd_axis_name axis_name;
+   enum relabsd_axis_name axis_index;
    struct relabsd_axis *axis;
 
    if (argc < 7)
@@ -31,7 +31,7 @@ static int parse_axis
       return -1;
    }
 
-   axis_index = relabsd_axis_from_name(argv[0]);
+   axis_index = relabsd_axis_parse_name(argv[0]);
 
    if (axis_index == RELABSD_UNKNOWN)
    {
@@ -90,7 +90,7 @@ static int parse_axis
 int relabsd_parameters_parse_execution_mode
 (
    const int argc,
-   const char * argv [const restrict static argc],
+   const char * const argv [const restrict static argc],
    struct relabsd_parameters parameters [const restrict static 1]
 )
 {
@@ -110,7 +110,7 @@ int relabsd_parameters_parse_execution_mode
    )
    {
       parameters->mode = RELABSD_PARAMETERS_COMPATIBILITY_TEST_MODE;
-      parameters->physical_device_name = argv[2];
+      parameters->physical_device_file_name = argv[2];
       parameters->read_argc = 2;
    }
    else if
@@ -121,7 +121,7 @@ int relabsd_parameters_parse_execution_mode
    {
       parameters->mode = RELABSD_PARAMETERS_CLIENT_MODE;
       parameters->communication_node_name = argv[2];
-      parameters->physical_device_name = (const char *) NULL;
+      parameters->physical_device_file_name = (const char *) NULL;
       parameters->read_argc = 2;
    }
    else if
@@ -132,7 +132,7 @@ int relabsd_parameters_parse_execution_mode
    {
       parameters->mode = RELABSD_PARAMETERS_SERVER_MODE;
       parameters->communication_node_name = argv[2];
-      parameters->physical_device_name = argv[3];
+      parameters->physical_device_file_name = argv[3];
       parameters->read_argc = 3;
    }
    else if
@@ -143,7 +143,7 @@ int relabsd_parameters_parse_execution_mode
    {
       parameters->mode = RELABSD_PARAMETERS_SERVER_MODE;
       parameters->communication_node_name = (char *) NULL;
-      parameters->physical_device_name = argv[2];
+      parameters->physical_device_file_name = argv[2];
       parameters->read_argc = 2;
    }
    else
@@ -172,11 +172,11 @@ int relabsd_parameters_parse_options
    relabsd_parameters_initialize_options(parameters);
 
    /*
-    * i = (params->read_argc + 1) because reading 2 params is actually reaching
-    * the [2] element of the array, since the [0] element is the executable
-    * name.
+    * i = (parameters->read_argc + 1) because reading 2 params is actually
+    * reaching the [2] element of the array, since the [0] element is the
+    * executable name.
     */
-   for (i = (params->read_argc + 1); i < argc; ++i)
+   for (i = (parameters->read_argc + 1); i < argc; ++i)
    {
       if
       (
@@ -184,9 +184,9 @@ int relabsd_parameters_parse_options
          || RELABSD_STRING_EQUALS("--daemon", argv[i])
       )
       {
-         params->run_as_daemon = 1;
+         parameters->run_as_daemon = 1;
 
-         if (params->node == ((char *) NULL))
+         if (parameters->communication_node_name == ((char *) NULL))
          {
             RELABSD_S_WARNING
             (
@@ -208,7 +208,7 @@ int relabsd_parameters_parse_options
          }
 
          ++i;
-         params->device_name = argv[i];
+         parameters->device_name = argv[i];
       }
       else if
       (
@@ -228,7 +228,13 @@ int relabsd_parameters_parse_options
 
          if
          (
-            relabsd_util_parse_int(argv[i], 0, INT_MAX, &(params->timeout))
+            relabsd_util_parse_int
+            (
+               argv[i],
+               0,
+               INT_MAX,
+               &(parameters->timeout)
+            )
             < 0
          )
          {
@@ -261,7 +267,7 @@ int relabsd_parameters_parse_options
 
          ++i;
 
-         if (parse_axis((argc - i), (argv + i), params->axes) < 0)
+         if (parse_axis((argc - i), (argv + i), parameters->axes) < 0)
          {
             relabsd_parameters_print_usage(argv[0]);
 
@@ -283,7 +289,7 @@ int relabsd_parameters_parse_options
          }
 
          ++i;
-         params->configuration_file = argv[i];
+         parameters->configuration_file = argv[i];
       }
       else
       {

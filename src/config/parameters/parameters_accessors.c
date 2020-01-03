@@ -1,3 +1,7 @@
+/**** POSIXS ^*****************************************************************/
+#include <stdlib.h>
+
+/**** RELABSD *****************************************************************/
 #include <relabsd/config/parameters.h>
 
 /******************************************************************************/
@@ -9,7 +13,7 @@
 /******************************************************************************/
 void relabsd_parameters_initialize_options
 (
-   const struct relabsd_parameters parameters [const restrict static 1]
+   struct relabsd_parameters parameters [const restrict static 1]
 )
 {
    parameters->run_as_daemon = 0;

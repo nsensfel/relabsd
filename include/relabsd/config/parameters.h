@@ -28,7 +28,7 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1]);
 /**** Accessors ***************************************************************/
 void relabsd_parameters_initialize_options
 (
-   const struct relabsd_parameters parameters [const restrict static 1]
+   struct relabsd_parameters parameters [const restrict static 1]
 );
 
 int relabsd_parameters_get_run_as_daemon

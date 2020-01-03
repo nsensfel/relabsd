@@ -1,6 +1,9 @@
 /**** POSIX *******************************************************************/
 #include <string.h>
 
+/**** LIBEVDEV ****************************************************************/
+#include <libevdev/libevdev.h>
+
 /**** RELABSD *****************************************************************/
 #include <relabsd/device/axis.h>
 
@@ -21,7 +24,7 @@ void relabsd_axis_initialize
 
 void relabsd_axis_to_absinfo
 (
-   struct relabsd_axis axis [const restrict static 1]
+   struct relabsd_axis axis [const restrict static 1],
    struct input_absinfo absinfo [const restrict static 1]
 )
 {
@@ -32,3 +35,13 @@ void relabsd_axis_to_absinfo
    absinfo->flat = (__s32) axis->flat;
    absinfo->resolution = (__s32) axis->resolution;
 }
+
+void relabsd_axis_enable
+(
+   struct relabsd_axis axis [const restrict static 1]
+)
+{
+   axis->is_enabled = 1;
+}
+
+
