@@ -1,6 +1,16 @@
 #pragma once
 
+/**** LIBEVDEV ****************************************************************/
+#include <libevdev/libevdev.h>
+
+/**** RELABSD *****************************************************************/
 #include <relabsd/config/parameters_types.h>
+
+#include <relabsd/device/axis.h>
+
+/******************************************************************************/
+/**** EXPORTED FUNCTIONS ******************************************************/
+/******************************************************************************/
 
 /**** Utility *****************************************************************/
 int relabsd_parameters_parse_execution_mode
@@ -24,6 +34,12 @@ int relabsd_parameters_argument_count_for
 );
 
 void relabsd_parameters_print_usage (const char exec [const restrict static 1]);
+
+int relabsd_parameters_are_compatible_with
+(
+   const struct libevdev * const restrict libevdev/*[const restrict static 1]*/,
+   const struct relabsd_parameters parameters [const restrict static 1]
+);
 
 /**** Accessors ***************************************************************/
 void relabsd_parameters_initialize_options
@@ -53,5 +69,11 @@ const char * relabsd_parameters_get_physical_device_file_name
 
 enum relabsd_parameters_run_mode relabsd_parameters_get_execution_mode
 (
+   const struct relabsd_parameters parameters [const restrict static 1]
+);
+
+struct relabsd_axis * relabsd_parameters_get_axis
+(
+   const enum relabsd_axis_name i,
    const struct relabsd_parameters parameters [const restrict static 1]
 );

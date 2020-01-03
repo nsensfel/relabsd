@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 /**** LIBEVDEV ****************************************************************/
 #include <libevdev/libevdev.h>
@@ -23,33 +24,38 @@
 /******************************************************************************/
 static void replace_rel_axes
 (
-   const struct relabsd_parameters parameters [const restrict static 1],
+   const struct relabsd_parameters parameters [const static 1],
    const struct relabsd_virtual_device device [const restrict static 1]
 )
 {
    int i;
-   for (i = 0; i < RELABSD_VALID_AXES_COUNT; i++)
+   for (i = 0; i < RELABSD_AXIS_VALID_AXES_COUNT; i++)
    {
-      if (config->axis[i].enabled)
+      enum relabsd_axis_name axis_name;
+      struct relabsd_axis * axis;
+
+      axis_name = ((enum relabsd_axis_name) i);
+      axis = relabsd_parameters_get_axis(axis_name, parameters);
+
+      if (relabsd_axis_is_enabled(axis))
       {
          struct input_absinfo absinfo;
 
-
-         relabsd_config_get_absinfo(config, (enum relabsd_axis) i, &absinfo);
+         relabsd_axis_to_absinfo(axis, &absinfo);
 
          /* TODO: report failure? 0 on success, -1 otherwise, no cause given. */
          (void) libevdev_disable_event_code
          (
             device->libevdev,
             EV_REL,
-            relabsd_axis_to_rel((enum relabsd_axis) i);
+            relabsd_axis_name_to_evdev_rel(axis_name)
          );
 
          (void) libevdev_enable_event_code
          (
             device->libevdev,
             EV_ABS,
-            relabsd_axis_to_abs((enum relabsd_axis) i);
+            relabsd_axis_name_to_evdev_abs(axis_name),
             &absinfo
          );
       }
@@ -79,7 +85,7 @@ static int rename_device
        * I'm assuming that since they use the term 'string', it is \0
        * terminated.
        */
-      real_name = libevdev_get_name(dev);
+      real_name = libevdev_get_name(device->libevdev);
    }
 
    new_name_size += strlen(real_name);
@@ -96,7 +102,7 @@ static int rename_device
       );
 
       /* This frees whatever came from 'libevdev_get_name'. */
-      libevdev_set_name(dev, RELABSD_DEVICE_PREFIX);
+      libevdev_set_name(device->libevdev, RELABSD_DEVICE_PREFIX);
 
       return -1;
    }
@@ -124,7 +130,7 @@ static int rename_device
       );
 
       /* This frees whatever came from 'libevdev_get_name'. */
-      libevdev_set_name(dev, RELABSD_DEVICE_PREFIX);
+      libevdev_set_name(device->libevdev, RELABSD_DEVICE_PREFIX);
 
       free((void *) new_name);
 
@@ -132,7 +138,7 @@ static int rename_device
    }
 
    /* This frees whatever came from 'libevdev_get_name'. */
-   libevdev_set_name(dev, new_name);
+   libevdev_set_name(device->libevdev, new_name);
 
    /* FIXME: not entirely sure I should be the one to free it. */
    free((void *) new_name);
@@ -149,6 +155,7 @@ int relabsd_virtual_device_create_from
    struct relabsd_virtual_device device [const restrict static 1]
 )
 {
+   int err;
    struct libevdev * physical_device_libevdev;
    int physical_device_file;
 
@@ -185,18 +192,19 @@ int relabsd_virtual_device_create_from
          strerror(-err)
       );
 
-      (void) close(device->file);
+      (void) close(physical_device_file);
 
       return -1;
    }
 
+   device->libevdev = physical_device_libevdev;
+
    /* Not exactly fatal, is it? */
-   (void) rename_device(parameters, physical_device_libevdev);
+   (void) rename_device(parameters, device);
 
    libevdev_enable_event_type(physical_device_libevdev, EV_ABS);
 
-   replace_rel_axes(parameters, physical_device_libevdev);
-
+   replace_rel_axes(parameters, device);
 
    err =
       libevdev_uinput_create_from_device
@@ -218,9 +226,6 @@ int relabsd_virtual_device_create_from
       return -1;
    }
 
-   /* For future modifications. */
-   device->libevdev = physical_device_libevdev;
-
    /*
     * We only need the physical device's (now modified) profile, not to actually
     * read from it.
@@ -229,7 +234,7 @@ int relabsd_virtual_device_create_from
 
    if (close(physical_device_file) == -1)
    {
-      RELABSD_ERROR("Could not close physical device: %s". strerror(errno));
+      RELABSD_ERROR("Could not close physical device: %s", strerror(errno));
    }
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Created virtual device.");
@@ -317,15 +322,21 @@ void relabsd_virtual_device_set_axes_to_zero
 {
    int i;
 
-   for (i = 0; i < RELABSD_VALID_AXES_COUNT; ++i)
+   for (i = 0; i < RELABSD_AXIS_VALID_AXES_COUNT; ++i)
    {
-      if (parameters->axis[i].enabled)
+      if
+      (
+         relabsd_axis_is_enabled
+         (
+            relabsd_parameters_get_axis((enum relabsd_axis_name) i, parameters)
+         )
+      )
       {
          relabsd_virtual_device_write_evdev_event
          (
             device,
             EV_ABS,
-            relabsd_axis_to_abs((enum relabsd_axis) i),
+            relabsd_axis_name_to_evdev_abs((enum relabsd_axis_name) i),
             0
          );
       }
@@ -337,11 +348,15 @@ void relabsd_virtual_device_set_axes_to_zero
    i =
       libevdev_uinput_write_event(device->uinput_device, EV_SYN, SYN_REPORT, 0);
 
-   RELABSD_ERROR
-   (
-      "Unable to generate event {type = EV_SYN; code = SYN_REPORT; value = 0}:"
-      " %s.",
-      strerror(-i)
-   );
+   if (i != 0)
+   {
+      RELABSD_ERROR
+      (
+         "Unable to generate event"
+         " {type = EV_SYN; code = SYN_REPORT; value = 0}:"
+         " %s.",
+         strerror(-i)
+      );
+   }
 }
 

@@ -31,7 +31,7 @@ void relabsd_physical_device_close
  */
 int relabsd_physical_device_read
 (
-   const struct relabsd_physical_device device [const restrict static 1],
+   struct relabsd_physical_device device [const restrict static 1],
    unsigned int input_type [const restrict static 1],
    unsigned int input_code [const restrict static 1],
    int input_value [const restrict static 1]

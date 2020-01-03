@@ -16,8 +16,8 @@
    #define RELABSD_UINPUT_OPEN_MANAGED LIBEVDEV_UINPUT_OPEN_MANAGED
 #endif
 
-struct relabsd_device
+struct relabsd_virtual_device
 {
-   struct libevdev * dev;
-   struct libevdev_uinput * uidev;
+   struct libevdev * libevdev;
+   struct libevdev_uinput * uinput_device;
 };

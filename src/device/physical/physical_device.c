@@ -10,66 +10,13 @@
 /**** RELABSD *****************************************************************/
 #include <relabsd/debug.h>
 
+#include <relabsd/config/parameters.h>
+
+#include <relabsd/device/physical_device.h>
+
 /******************************************************************************/
 /**** LOCAL FUNCTIONS *********************************************************/
 /******************************************************************************/
-/*
- * Ensures that the input device has enabled the EV_REL axes mentioned
- * in the configuration file.
- *
- * Returns -1 on (fatal) error,
- *         0 all configured axes are accounted for.
- */
-static int check_for_axes
-(
-   const struct libevdev * const dev,
-   const struct relabsd_config * const conf
-)
-{
-   int i, device_is_valid;
-   unsigned int rel_code;
-
-   device_is_valid = 1;
-
-   for (i = RELABSD_VALID_AXES_COUNT; i --> 0;)
-   {
-      if (conf->axis[i].enabled)
-      {
-         rel_code = relabsd_axis_to_rel((enum relabsd_axis) i);
-
-         if (!libevdev_has_event_code(dev, EV_REL, rel_code))
-         {
-            RELABSD_FATAL
-            (
-               "Input device has no relative %s axis, yet the configuration "
-               "file asks to convert it.",
-               relabsd_axis_to_name((enum relabsd_axis) i)
-            );
-
-            device_is_valid = 0;
-         }
-      }
-   }
-
-   return (device_is_valid - 1);
-}
-
-/*
- * Ensures that the input device is compatible with the config file.
- *
- * Returns -1 on (fatal) error,
- *         0 is the device is compatible.
- */
-static int device_is_compatible
-(
-   const struct libevdev * const dev,
-   const struct relabsd_config * const conf
-)
-{
-
-
-   return 0;
-}
 
 /******************************************************************************/
 /**** EXPORTED FUNCTIONS ******************************************************/
@@ -77,8 +24,7 @@ static int device_is_compatible
 int relabsd_physical_device_compatibility_test
 (
    const struct relabsd_physical_device device [const restrict static 1],
-   const struct relabsd_parameters parameters [const restrict static 0],
-   const int verbose
+   const struct relabsd_parameters parameters [const restrict]
 )
 {
    if (!libevdev_has_event_type(device->libevdev, EV_REL))
@@ -91,7 +37,7 @@ int relabsd_physical_device_compatibility_test
    if
    (
       (parameters != (const struct relabsd_parameters *) NULL)
-      && (check_for_axes(device->libevdev, parameters, verbose) < 0)
+      && relabsd_parameters_are_compatible_with(device->libevdev, parameters)
    )
    {
       RELABSD_S_FATAL
@@ -174,7 +120,7 @@ void relabsd_physical_device_close
 
 int relabsd_physical_device_read
 (
-   const struct relabsd_physical_device device [const restrict static 1],
+   struct relabsd_physical_device device [const restrict static 1],
    unsigned int input_type [const restrict static 1],
    unsigned int input_code [const restrict static 1],
    int input_value [const restrict static 1]

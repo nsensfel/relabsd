@@ -44,4 +44,10 @@ void relabsd_axis_enable
    axis->is_enabled = 1;
 }
 
-
+int relabsd_axis_is_enabled
+(
+   const struct relabsd_axis axis [const restrict static 1]
+)
+{
+   return axis->is_enabled;
+}

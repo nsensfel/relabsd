@@ -62,3 +62,13 @@ enum relabsd_parameters_run_mode relabsd_parameters_get_execution_mode
 {
    return parameters->mode;
 }
+
+struct relabsd_axis * relabsd_parameters_get_axis
+(
+   const enum relabsd_axis_name i,
+   const struct relabsd_parameters parameters [const restrict static 1]
+)
+{
+   return (parameters->axes + i);
+}
+

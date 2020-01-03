@@ -6,5 +6,5 @@ struct relabsd_physical_device
 {
    struct libevdev * libevdev;
    int file;
-   int timed_out;
+   int is_late;
 };

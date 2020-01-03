@@ -1,7 +1,14 @@
 #pragma once
 
+/**** LIBEVDEV ****************************************************************/
+#include <libevdev/libevdev.h>
+
+/**** RELABSD *****************************************************************/
 #include <relabsd/device/axis_types.h>
 
+/******************************************************************************/
+/**** EXPORTED FUNCTIONS ******************************************************/
+/******************************************************************************/
 /*
  * Gives the relabsd_axis and EV_ABS event code equivalent to an EV_REL event
  * code.
@@ -65,3 +72,13 @@ int relabsd_axis_enable_option_from_name
 );
 
 void relabsd_axis_enable (struct relabsd_axis axis [const restrict static 1]);
+int relabsd_axis_is_enabled
+(
+   const struct relabsd_axis axis [const restrict static 1]
+);
+
+void relabsd_axis_to_absinfo
+(
+   struct relabsd_axis axis [const restrict static 1],
+   struct input_absinfo absinfo [const restrict static 1]
+);
