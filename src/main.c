@@ -13,10 +13,12 @@
 /******************************************************************************/
 /**** EXPORTED FUNCTIONS ******************************************************/
 /******************************************************************************/
-int main (int argc, char ** argv)
+int main (int const argc, const char * const * const argv)
 {
    int retval;
    struct relabsd_parameters params;
+
+   retval = -1;
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "relabsd started.");
 
@@ -33,8 +35,13 @@ int main (int argc, char ** argv)
          retval = relabsd_client_main(argc, argv, &params);
          break;
 
-      case RELABSD_PARAMETERS_RUN_SERVER_MODE:
+      case RELABSD_PARAMETERS_SERVER_MODE:
          retval = relabsd_server_main(argc, argv, &params);
+         break;
+
+      case RELABSD_PARAMETERS_COMPATIBILITY_TEST_MODE:
+         /* TODO: implement this. */
+         RELABSD_S_FATAL("Compatibility test mode not implemented.");
          break;
    }
 

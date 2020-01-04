@@ -27,7 +27,6 @@ void relabsd_physical_device_close
  *
  * The 'input_*' parameters do not need to be initialized, as the function will
  * do that for you (on success).
- * Requires 'input' to be open.
  */
 int relabsd_physical_device_read
 (
@@ -38,6 +37,11 @@ int relabsd_physical_device_read
 );
 
 int relabsd_physical_device_is_late
+(
+   const struct relabsd_physical_device device [const restrict static 1]
+);
+
+int relabsd_physical_device_get_file_descriptor
 (
    const struct relabsd_physical_device device [const restrict static 1]
 );

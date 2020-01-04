@@ -7,7 +7,7 @@ include(FindPkgConfig)
 
 # ${SRC_FILES} is recursively defined in the subdirectories.
 # Each subdirectory adds only the source files that are present at its level.
-file(GLOB_RECURSE SRC_FILES src/ true *.c)
+file(GLOB_RECURSE SRC_FILES src/ true src/*.c)
 add_executable(relabsd ${SRC_FILES})
 
 include_directories(include/)
@@ -21,10 +21,14 @@ pkg_search_module(LIBEVDEV REQUIRED libevdev)
 include_directories(${LIBEVDEV_INCLUDE_DIRS})
 target_link_libraries(relabsd ${LIBEVDEV_LIBRARIES})
 
+# We use pthreads.
+find_package(Threads)
+target_link_libraries(relabsd ${CMAKE_THREAD_LIBS_INIT})
+
 # Be loud about dubious code.
 if (CMAKE_COMPILER_IS_GNUCC)
    message(STATUS "CMake is using GNUCC. Verbose flags are activated.")
-   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wextra")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Werror -Wextra")
 endif (CMAKE_COMPILER_IS_GNUCC)
 
 option(

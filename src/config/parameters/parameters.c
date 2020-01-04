@@ -216,6 +216,8 @@ int relabsd_parameters_parse_options
          || RELABSD_STRING_EQUALS("--timeout", argv[i])
       )
       {
+         int timeout;
+
          if (argc == i)
          {
             RELABSD_FATAL("Missing value for \"%s\" <OPTION>.", argv[i]);
@@ -226,17 +228,7 @@ int relabsd_parameters_parse_options
 
          ++i;
 
-         if
-         (
-            relabsd_util_parse_int
-            (
-               argv[i],
-               0,
-               INT_MAX,
-               &(parameters->timeout)
-            )
-            < 0
-         )
+         if (relabsd_util_parse_int(argv[i], 0, INT_MAX, &timeout) < 0)
          {
             RELABSD_FATAL
             (
@@ -250,6 +242,8 @@ int relabsd_parameters_parse_options
 
             return -1;
          }
+
+         relabsd_parameters_set_timeout(timeout, parameters);
       }
       else if
       (

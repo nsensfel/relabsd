@@ -1,5 +1,6 @@
-/**** POSIXS ^*****************************************************************/
+/**** POSIXS ******************************************************************/
 #include <stdlib.h>
+#include <string.h>
 
 /**** RELABSD *****************************************************************/
 #include <relabsd/config/parameters.h>
@@ -66,9 +67,52 @@ enum relabsd_parameters_run_mode relabsd_parameters_get_execution_mode
 struct relabsd_axis * relabsd_parameters_get_axis
 (
    const enum relabsd_axis_name i,
-   const struct relabsd_parameters parameters [const restrict static 1]
+   struct relabsd_parameters parameters [const restrict static 1]
 )
 {
    return (parameters->axes + i);
 }
 
+void relabsd_parameters_set_timeout
+(
+   const int timeout_msec,
+   struct relabsd_parameters parameters [const restrict static 1]
+)
+{
+   if (timeout_msec == 0)
+   {
+      parameters->use_timeout = 0;
+
+      return;
+   }
+
+   parameters->use_timeout = 1;
+
+   (void) memset((void *) &(parameters->timeout), 0, sizeof(struct timeval));
+
+   /* FIXME: Not sure that's correct. */
+   parameters->timeout.tv_sec = (time_t) (timeout_msec / 1000);
+   parameters->timeout.tv_usec =
+      (
+         ((suseconds_t) timeout_msec)
+         * ((suseconds_t) 1000)
+      );
+
+   return;
+}
+
+int relabsd_parameters_use_timeout
+(
+   const struct relabsd_parameters parameters [const restrict static 1]
+)
+{
+   return parameters->use_timeout;
+}
+
+struct timeval relabsd_parameters_get_timeout
+(
+   const struct relabsd_parameters parameters [const restrict static 1]
+)
+{
+   return parameters->timeout;
+}

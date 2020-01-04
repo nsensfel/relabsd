@@ -75,5 +75,21 @@ enum relabsd_parameters_run_mode relabsd_parameters_get_execution_mode
 struct relabsd_axis * relabsd_parameters_get_axis
 (
    const enum relabsd_axis_name i,
+   struct relabsd_parameters parameters [const restrict static 1]
+);
+
+void relabsd_parameters_set_timeout
+(
+   const int timeout_msec,
+   struct relabsd_parameters parameters [const restrict static 1]
+);
+
+struct timeval relabsd_parameters_get_timeout
+(
+   const struct relabsd_parameters parameters [const restrict static 1]
+);
+
+int relabsd_parameters_use_timeout
+(
    const struct relabsd_parameters parameters [const restrict static 1]
 );

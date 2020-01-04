@@ -24,7 +24,7 @@
 /******************************************************************************/
 static void replace_rel_axes
 (
-   const struct relabsd_parameters parameters [const static 1],
+   struct relabsd_parameters parameters [const static 1],
    const struct relabsd_virtual_device device [const restrict static 1]
 )
 {
@@ -151,7 +151,7 @@ static int rename_device
 /******************************************************************************/
 int relabsd_virtual_device_create_from
 (
-   const struct relabsd_parameters parameters [const restrict static 1],
+   struct relabsd_parameters parameters [const restrict static 1],
    struct relabsd_virtual_device device [const restrict static 1]
 )
 {
@@ -316,7 +316,7 @@ int relabsd_virtual_device_write_evdev_event
 
 void relabsd_virtual_device_set_axes_to_zero
 (
-   const struct relabsd_parameters parameters [const restrict static 1],
+   struct relabsd_parameters parameters [const restrict static 1],
    const struct relabsd_virtual_device device [const restrict static 1]
 )
 {

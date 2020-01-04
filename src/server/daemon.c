@@ -151,6 +151,8 @@ int relabsd_server_create_daemon (void)
 
    if (proc_id != ((pid_t) 0))
    {
+      errno = 0;
+
       if (close(unnamed_pipe[1]) == -1)
       {
          RELABSD_ERROR
@@ -195,6 +197,8 @@ int relabsd_server_create_daemon (void)
    /* We need those. */
 
    /* 14/ Signal completion ***************************************************/
+   errno = 0;
+
    if (write(unnamed_pipe[0], (void *) "!", (size_t) 1) == -1)
    {
       RELABSD_ERROR
@@ -206,6 +210,7 @@ int relabsd_server_create_daemon (void)
    }
 
    /* Step 15 is done on the very first process. */
+   errno = 0;
 
    if (close(unnamed_pipe[1]) == -1)
    {

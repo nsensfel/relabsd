@@ -1,192 +1,245 @@
-#include <fcntl.h>
+/**** POSIX *******************************************************************/
+#include <sys/select.h>
+
 #include <errno.h>
 #include <string.h>
-#include <unistd.h>
-#include <signal.h>
 
-#include "pervasive.h"
-#include "error.h"
-#include "config.h"
-#include "input.h"
-#include "relabsd_device.h"
+/**** RELABSD *****************************************************************/
+#include <relabsd/debug.h>
+#include <relabsd/server.h>
 
-static void handle_relative_axis_event
-(
-   struct relabsd_config * const conf,
-   const struct relabsd_device * const dev,
-   unsigned int const input_type,
-   unsigned int const input_code,
-   int value
-)
-{
-   unsigned int abs_code;
-   enum relabsd_axis rad_code;
+#include <relabsd/config/parameters.h>
 
-   rad_code = relabsd_axis_convert_evdev_rel(input_code, &abs_code);
+#include <relabsd/device/axis.h>
+#include <relabsd/device/physical_device.h>
+#include <relabsd/device/virtual_device.h>
 
-   switch (relabsd_config_filter(conf, rad_code, &value))
-   {
-      case -1:
-         /* 'conf' doesn't want the event to be transmitted. */
-         break;
-
-      case 0:
-         /* 'conf' wants the event to be transmitted as is. */
-         relabsd_device_write_evdev_event(dev, input_type, input_code, value);
-         break;
-
-      case 1:
-         /* 'conf' allows the value to be emitted */
-         relabsd_device_write_evdev_event(dev, EV_ABS, abs_code, value);
-         break;
-   }
-}
-
+/******************************************************************************/
+/**** LOCAL FUNCTIONS *********************************************************/
+/******************************************************************************/
 static void convert_input
 (
-   struct relabsd_config * const conf,
-   struct relabsd_input * const input,
-   const struct relabsd_device * const dev
+   struct relabsd_server server [const restrict static 1]
 )
 {
    unsigned int input_type, input_code;
    int value;
 
-   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Handling input events...");
-
-   input->timed_out = 1;
-
-   while (RELABSD_RUN == 1)
+   if
+   (
+      relabsd_physical_device_read
+      (
+         &(server->physical_device),
+         &input_type,
+         &input_code,
+         &value
+      )
+      < 0
+   )
    {
-      if (conf->enable_timeout)
+      return;
+   }
+
+   if (input_type == EV_REL)
+   {
+      unsigned int abs_code;
+      enum relabsd_axis_name axis_name;
+
+      axis_name =
+         relabsd_axis_name_and_evdev_abs_from_evdev_rel(input_code, &abs_code);
+
+      if (axis_name == RELABSD_UNKNOWN)
       {
-         switch (relabsd_input_wait_for_next_event(input, conf))
-         {
-            case 1:
-               input->timed_out = 0;
-               break;
-
-            case 0:
-               relabsd_device_set_axes_to_zero(dev, conf);
-               input->timed_out = 1;
-               break;
-
-            case -1:
-               continue;
-         }
+         return;
       }
 
-      if (relabsd_input_read(input, &input_type, &input_code, &value) < 0)
+      switch
+      (
+         relabsd_axis_filter_new_value
+         (
+            relabsd_parameters_get_axis(axis_name, &(server->parameters)),
+            &value
+         )
+      )
       {
-         /*
-          * The next event should not be retransmitted, or some kind of error
-          * happened.
-          */
-         /* TODO: error handling. */
-         continue;
-      }
+         case -1:
+            /* Doesn't want the event to be transmitted. */
+            return;
 
-      if (input_type == EV_REL)
-      {
-         /* We might have to convert the event. */
-         handle_relative_axis_event(conf, dev, input_type, input_code, value);
+         case 1:
+            (void) relabsd_virtual_device_write_evdev_event
+            (
+               &(server->virtual_device),
+               EV_ABS,
+               abs_code,
+               value
+            );
+            return;
+
+         case 0:
+            (void) relabsd_virtual_device_write_evdev_event
+            (
+               &(server->virtual_device),
+               input_type,
+               input_code,
+               value
+            );
+            return;
       }
-      else
-      {
-         /* Any other event is retransmitted as is. */
-         relabsd_device_write_evdev_event(dev, input_type, input_code, value);
-      }
+   }
+   else
+   {
+      /* Any other event is retransmitted as is. */
+      (void) relabsd_virtual_device_write_evdev_event
+      (
+         &(server->virtual_device),
+         input_type,
+         input_code,
+         value
+      );
    }
 }
 
+static void reset_axes
+(
+   struct relabsd_server server [const restrict static 1]
+)
+{
+   relabsd_virtual_device_set_axes_to_zero
+   (
+      &(server->parameters),
+      &(server->virtual_device)
+   );
+}
+
+static int wait_for_next_event
+(
+   fd_set ready_to_read [const restrict static 1],
+   struct relabsd_server server [const static 1]
+)
+{
+   int ready_fds, physical_device_fd, interruption_fd, highest_fd;
+
+   FD_ZERO(ready_to_read);
+
+   physical_device_fd =
+      relabsd_physical_device_get_file_descriptor(&(server->physical_device));
+
+   FD_SET(physical_device_fd, ready_to_read);
+
+   if (relabsd_physical_device_is_late(&(server->physical_device)))
+   {
+      return 1;
+   }
+
+   interruption_fd = relabsd_server_get_interruption_file_descriptor();
+
+   FD_SET(interruption_fd, ready_to_read);
+
+   if (interruption_fd > physical_device_fd)
+   {
+      highest_fd = interruption_fd;
+   }
+   {
+      highest_fd = physical_device_fd;
+   }
+
+   errno = 0;
+
+   if (relabsd_parameters_use_timeout(&(server->parameters)))
+   {
+      struct timeval curr_timeout;
+
+      /* TODO: mutex lock */
+      /* call to select may alter timeout */
+      curr_timeout = relabsd_parameters_get_timeout(&(server->parameters));
+      /* TODO: mutex unlock */
+
+      ready_fds =
+         select
+         (
+            (highest_fd + 1),
+            ready_to_read,
+            (fd_set *) NULL,
+            (fd_set *) NULL,
+            (struct timeval *) &curr_timeout
+         );
+   }
+   else
+   {
+      ready_fds =
+         select
+         (
+            (highest_fd + 1),
+            ready_to_read,
+            (fd_set *) NULL,
+            (fd_set *) NULL,
+            (struct timeval *) NULL
+         );
+   }
+
+   if (ready_fds == -1)
+   {
+      RELABSD_ERROR
+      (
+         "Error while waiting for new input from the physical device: %s.",
+         strerror(errno)
+      );
+
+      FD_ZERO(ready_to_read);
+
+      return 1;
+   }
+
+   /* ready_fds == 0 on timeout */
+   return ready_fds;
+}
+
+/******************************************************************************/
+/**** EXPORTED FUNCTIONS ******************************************************/
+/******************************************************************************/
 int relabsd_server_conversion_loop
 (
    struct relabsd_server server [const static 1]
 )
 {
-   return 0;
-}
-
-
-int wait_for_next_event
-(
-   const struct relabsd_physical_device * const input,
-   const struct relabsd_config * const config
-)
-{
-   int ready_fds;
-   const int old_errno = errno;
    fd_set ready_to_read;
-   struct timeval curr_timeout;
 
-   FD_ZERO(&ready_to_read);
-   FD_SET(input->fd, &ready_to_read);
-
-   /* call to select may alter timeout */
-   memcpy
-   (
-      (void *) &(curr_timeout),
-      (const void *) &(config->timeout),
-      sizeof(struct timeval)
-   );
-
-   errno = 0;
-
-   RELABSD_S_ERROR
-   (
-      "Waiting for input to be ready..."
-   );
-
-   ready_fds = select
-   (
-      (input->fd + 1),
-      &ready_to_read,
-      (fd_set *) NULL,
-      (fd_set *) NULL,
-      (input->timed_out) ? NULL : &(curr_timeout)
-   );
-
-   if (errno != 0)
+   for (;;)
    {
-      RELABSD_ERROR
-      (
-         "Unable to wait for timeout: %s (errno: %d).",
-         strerror(errno),
-         errno
-      );
-
-      if (errno == EINTR)
+      switch (wait_for_next_event(&ready_to_read, server))
       {
-         /* Signal interruption? */
+         case 1:
+         case 2:
+            if (!relabsd_server_keep_running())
+            {
+               return 0;
+            }
+
+            if
+            (
+               FD_ISSET
+               (
+                  relabsd_physical_device_get_file_descriptor
+                  (
+                     &(server->physical_device)
+                  ),
+                  &ready_to_read
+               )
+            )
+            {
+               /* TODO: mutex lock */
+               convert_input(server);
+               /* TODO: mutex unlock */
+            }
+
+            break;
+
+         case 0:
+            /* TODO: mutex lock */
+            reset_axes(server);
+            /* TODO: mutex unlock */
+            break;
       }
-      else
-      {
-         /* TODO: error message */
-      }
-
-      errno = old_errno;
-
-      return -1;
    }
-
-   if (ready_fds == -1)
-   {
-      /* TODO: error message */
-
-      RELABSD_S_ERROR
-      (
-         "Unable to wait for timeout, yet errno was not set to anything."
-      );
-
-      errno = old_errno;
-
-      return -1;
-   }
-
-   RELABSD_ERROR
-   (
-      "Input is ready, ready_fds = %d", ready_fds
-   );
-
-   return ready_fds;
 }

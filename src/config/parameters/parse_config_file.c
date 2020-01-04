@@ -123,47 +123,66 @@ static int read_axis_options
    return -1;
 }
 
-/*
-static int parse_timeout_option
+static int parse_timeout_configuration_line
 (
-   struct relabsd_config * const conf,
-   const char * const param
+   FILE file [const restrict static 1],
+   struct relabsd_parameters parameters [const static 1]
 )
 {
+   int read_count;
    int timeout_msec;
-   const int prev_errno = errno;
-
-   conf->enable_timeout = 1;
 
    errno = 0;
 
-   timeout_msec = atoi(param);
+   read_count = fscanf(file, "%d", &timeout_msec);
 
-   if (timeout_msec <= 0)
+   if (read_count == EOF)
+   {
+      if (errno == 0)
+      {
+         RELABSD_S_FATAL
+         (
+            "Unexpected end of file while reading the timeout parameter in the"
+            " configuration file."
+         );
+      }
+      else
+      {
+         RELABSD_FATAL
+         (
+            "An error occured while reading the timeout parameter in the"
+            " configuration file: %s.",
+            strerror(errno)
+         );
+      }
+
+      return -1;
+   }
+   else if (read_count < 1)
+   {
+      RELABSD_S_FATAL
+      (
+         "Invalid parameter count for the timeout option in the configuration"
+         " file."
+      );
+
+      return -1;
+   }
+   else if (timeout_msec < 0)
    {
       RELABSD_FATAL
       (
-         "Illegal value for timeout \"%d\": accepted range is [1, %d].",
-         timeout_msec,
-         INT_MAX
+         "Invalid value the timeout option in the configuration file (%d).",
+         timeout_msec
       );
 
       return -1;
    }
 
-   memset((void *) &(conf->timeout), 0, sizeof(struct timeval));
-
-   conf->timeout.tv_sec = (time_t) (timeout_msec / 1000);
-
-   conf->timeout.tv_usec =
-      (
-         ((suseconds_t) timeout_msec)
-         * ((suseconds_t) 1000)
-      );
+   relabsd_parameters_set_timeout(timeout_msec, parameters);
 
    return 0;
 }
-*/
 
 /*
  * Returns -1 on (fatal) error,
@@ -184,6 +203,11 @@ static int parse_axis_configuration_line
 
    if (axis_index == RELABSD_UNKNOWN)
    {
+      if (RELABSD_IS_PREFIX("TO", axis_name))
+      {
+         return parse_timeout_configuration_line(file, parameters);
+      }
+
       RELABSD_FATAL("Unknown axis '%s' in the configuration file.", axis_name);
 
       return -1;

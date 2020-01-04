@@ -196,6 +196,10 @@ int relabsd_physical_device_read
 
          return -1;
    }
+
+   RELABSD_S_PROG_ERROR("Reached what is supposed to be dead code.");
+
+   return -1;
 }
 
 int relabsd_physical_device_is_late
@@ -204,4 +208,12 @@ int relabsd_physical_device_is_late
 )
 {
    return device->is_late;
+}
+
+int relabsd_physical_device_get_file_descriptor
+(
+   const struct relabsd_physical_device device [const restrict static 1]
+)
+{
+   return device->file;
 }

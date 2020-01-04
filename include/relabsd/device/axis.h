@@ -82,3 +82,9 @@ void relabsd_axis_to_absinfo
    struct relabsd_axis axis [const restrict static 1],
    struct input_absinfo absinfo [const restrict static 1]
 );
+
+int relabsd_axis_filter_new_value
+(
+   struct relabsd_axis axis [const restrict static 1],
+   int value [const restrict static 1]
+);

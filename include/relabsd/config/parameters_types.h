@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sys/time.h>
+
 #include <relabsd/device/axis_types.h>
 
 enum relabsd_parameters_run_mode
@@ -18,6 +20,7 @@ struct relabsd_parameters
    const char * device_name;
    const char * physical_device_file_name;
    const char * configuration_file;
-   int timeout; /* TODO: use time structure + enabled flag */
+   int use_timeout;
+   struct timeval timeout;
    struct relabsd_axis axes[RELABSD_AXIS_VALID_AXES_COUNT];
 };

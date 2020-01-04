@@ -97,7 +97,7 @@ static int open_socket
 static int send_commands
 (
    const int argc,
-   const char * argv [const restrict static argc],
+   const char * const argv [const restrict static argc],
    FILE socket [const restrict static 1]
 )
 {
@@ -158,16 +158,19 @@ static int receive_reply
    FILE socket [const restrict static 1]
 )
 {
+   /* TODO: implement. */
+   (void) fclose(socket);
+
    return 0;
 }
 
 /******************************************************************************/
 /**** EXPORTED FUNCTIONS ******************************************************/
 /******************************************************************************/
-int relabsd_client
+int relabsd_client_main
 (
    const int argc,
-   const char * argv [const restrict static argc],
+   const char * const argv [const restrict static argc],
    struct relabsd_parameters parameters [const restrict static 1]
 )
 {
