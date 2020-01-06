@@ -186,7 +186,18 @@ int relabsd_server_create_daemon (void)
          strerror(errno)
       );
 
-      /* TODO: boop main process. */
+      errno = 0;
+
+      if (write(unnamed_pipe[0], (void *) "!", (size_t) 1) == -1)
+      {
+         RELABSD_ERROR
+         (
+            "Unable to write to writing end of an unnamed pipe during the"
+            " daemon creation process: %s.",
+            strerror(errno)
+         );
+      }
+
       return -1;
    }
 

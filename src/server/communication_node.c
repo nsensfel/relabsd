@@ -14,7 +14,6 @@
 /******************************************************************************/
 /**** LOCAL FUNCTIONS *********************************************************/
 /******************************************************************************/
-
 static int create_socket (int result [const restrict static 1])
 {
    errno = 0;
@@ -80,6 +79,7 @@ static int bind_socket
 
    return 0;
 }
+
 /*
 static int set_socket_to_unblocking (const int socket)
 {
@@ -150,7 +150,6 @@ int relabsd_server_create_communication_node
 
    if (bind_socket(socket_name, *socket) < 0)
    {
-      /* TODO: err message. */
       (void) close(*socket);
 
       return -1;
@@ -158,7 +157,6 @@ int relabsd_server_create_communication_node
 
    if (set_socket_as_listener(*socket) < 0)
    {
-      /* TODO: err message. */
       (void) close(*socket);
 
       return -1;

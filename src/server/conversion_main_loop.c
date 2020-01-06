@@ -150,10 +150,10 @@ static int wait_for_next_event
    {
       struct timeval curr_timeout;
 
-      /* TODO: mutex lock */
+      pthread_mutex_lock(&(server->mutex));
       /* call to select may alter timeout */
       curr_timeout = relabsd_parameters_get_timeout(&(server->parameters));
-      /* TODO: mutex unlock */
+      pthread_mutex_unlock(&(server->mutex));
 
       ready_fds =
          select
@@ -228,17 +228,17 @@ int relabsd_server_conversion_loop
                )
             )
             {
-               /* TODO: mutex lock */
+               pthread_mutex_lock(&(server->mutex));
                convert_input(server);
-               /* TODO: mutex unlock */
+               pthread_mutex_unlock(&(server->mutex));
             }
 
             break;
 
          case 0:
-            /* TODO: mutex lock */
+            pthread_mutex_lock(&(server->mutex));
             reset_axes(server);
-            /* TODO: mutex unlock */
+            pthread_mutex_unlock(&(server->mutex));
             break;
       }
    }

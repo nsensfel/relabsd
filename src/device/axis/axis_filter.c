@@ -122,8 +122,6 @@ int relabsd_axis_filter_new_value
       return 0;
    }
 
-   /* TODO: handle conf->axis[axis].resolution */
-
    if (axis->flags[RELABSD_DIRECT])
    {
       return direct_filter(axis, value);

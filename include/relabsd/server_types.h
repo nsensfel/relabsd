@@ -11,6 +11,7 @@
 
 struct relabsd_server
 {
+   pthread_mutex_t mutex;
    pthread_t communication_thread;
    struct relabsd_parameters parameters;
    struct relabsd_physical_device physical_device;

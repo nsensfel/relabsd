@@ -1,3 +1,6 @@
+/**** POSIX *******************************************************************/
+#include <string.h>
+
 /**** RELABSD *****************************************************************/
 #include <relabsd/config.h>
 #include <relabsd/debug.h>
@@ -16,6 +19,8 @@ static int initialize
    struct relabsd_server server [const restrict static 1]
 )
 {
+   int err;
+
    if
    (
       relabsd_physical_device_open
@@ -47,6 +52,18 @@ static int initialize
       return -2;
    }
 
+   err =
+      pthread_mutex_init(&(server->mutex), (const pthread_mutexattr_t *) NULL);
+
+   if (err != 0)
+   {
+      RELABSD_FATAL
+      (
+         "Could not initialize the server's mutex: %s.",
+         strerror(err)
+      );
+   }
+
    if
    (
       (
@@ -59,7 +76,7 @@ static int initialize
       relabsd_virtual_device_destroy(&(server->virtual_device));
       relabsd_physical_device_close(&(server->physical_device));
 
-      return -3;
+      return -4;
    }
 
    return 0;
@@ -78,6 +95,8 @@ static void finalize (struct relabsd_server server [const static 1])
 
    relabsd_virtual_device_destroy(&(server->virtual_device));
    relabsd_physical_device_close(&(server->physical_device));
+
+   (void) pthread_mutex_destroy(&(server->mutex));
 }
 
 /******************************************************************************/
