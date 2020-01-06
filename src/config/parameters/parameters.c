@@ -394,13 +394,17 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1])
          "<options>:\n"
          "\t\t(Re)defines an axis.\n\n"
 
-      "\t[-m | --mod-axis] <name> <min> <max> <fuzz> <flat> <resolution> "
-         "<signed_options>:\n"
-         "\t\tModifies an axis (use + and - signs for the options).\n\n"
+      "\t[-m | --mod-axis] <name> <MOD_PARAM> [+|-|=]<value>:\n"
+         "\t\tModifies an axis.\n\n"
 
       "\t[-f | --config] <config_file>"
          "<options>:\n"
-         "\t\t(Re)defines an axis.\n",
+         "\t\t(Re)defines an axis.\n\n"
+
+      "\t[-q | --quit]:\n"
+         "\t\tTerminates the targeted server instance.\n\n"
+
+      "<MOD_PARAM>: [min|max|fuzz|flat|resolution]\n",
       exec
    );
 }

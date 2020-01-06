@@ -37,3 +37,9 @@ int relabsd_server_join_communication_thread
 (
    struct relabsd_server server [const static 1]
 );
+
+int relabsd_server_handle_client
+(
+   const int socket,
+   struct relabsd_server server [const static 1]
+);

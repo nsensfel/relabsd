@@ -144,7 +144,7 @@ static int send_commands
       }
    }
 
-   if (fputc('\0', socket) == EOF)
+   if (fputc('\n', socket) == EOF)
    {
    }
 

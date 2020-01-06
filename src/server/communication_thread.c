@@ -9,7 +9,6 @@
 /******************************************************************************/
 /**** LOCAL FUNCTIONS *********************************************************/
 /******************************************************************************/
-
 static void main_loop (struct relabsd_server server [const static 1])
 {
    int communication_socket, current_client_socket;
@@ -87,7 +86,7 @@ static void main_loop (struct relabsd_server server [const static 1])
          return -1;
       }
 
-      (void) handle_client(current_client_socket, server);
+      (void) relabsd_server_handle_client(current_client_socket, server);
    }
 }
 
