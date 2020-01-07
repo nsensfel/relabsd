@@ -88,3 +88,8 @@ int relabsd_axis_filter_new_value
    struct relabsd_axis axis [const restrict static 1],
    int value [const restrict static 1]
 );
+
+void relabsd_axis_initialize
+(
+   struct relabsd_axis axis [const restrict static 1]
+);

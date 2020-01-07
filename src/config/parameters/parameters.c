@@ -103,6 +103,8 @@ int relabsd_parameters_parse_execution_mode
       return -1;
    }
 
+   relabsd_parameters_initialize_options(parameters);
+
    if
    (
       RELABSD_STRING_EQUALS("-?", argv[1])
@@ -168,8 +170,6 @@ int relabsd_parameters_parse_options
    int i;
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Parsing options...");
-
-   relabsd_parameters_initialize_options(parameters);
 
    /*
     * i = (parameters->read_argc + 1) because reading 2 params is actually
@@ -283,7 +283,11 @@ int relabsd_parameters_parse_options
          }
 
          ++i;
-         parameters->configuration_file = argv[i];
+
+         if (relabsd_parameters_parse_config_file(argv[i], parameters) < 0)
+         {
+            return -1;
+         }
       }
       else
       {

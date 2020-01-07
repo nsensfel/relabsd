@@ -43,3 +43,9 @@ int relabsd_server_handle_client
    const int socket,
    struct relabsd_server server [const static 1]
 );
+
+void relabsd_server_destroy_communication_node
+(
+   const char socket_name [const restrict static 1],
+   const int socket
+);

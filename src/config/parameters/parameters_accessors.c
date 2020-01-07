@@ -5,6 +5,8 @@
 /**** RELABSD *****************************************************************/
 #include <relabsd/config/parameters.h>
 
+#include <relabsd/device/axis.h>
+
 /******************************************************************************/
 /**** LOCAL FUNCTIONS *********************************************************/
 /******************************************************************************/
@@ -17,11 +19,18 @@ void relabsd_parameters_initialize_options
    struct relabsd_parameters parameters [const restrict static 1]
 )
 {
+   int i;
+
    parameters->run_as_daemon = 0;
    parameters->communication_node_name = (const char *) NULL;
    parameters->device_name = (const char *) NULL;
    parameters->physical_device_file_name = (const char *) NULL;
    parameters->configuration_file = (const char *) NULL;
+
+   for (i = 0; i < RELABSD_AXIS_VALID_AXES_COUNT; ++i)
+   {
+      relabsd_axis_initialize(parameters->axes + i);
+   }
 }
 
 int relabsd_parameters_get_run_as_daemon

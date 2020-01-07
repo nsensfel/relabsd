@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 /**** RELABSD *****************************************************************/
 #include <relabsd/debug.h>
@@ -19,9 +20,9 @@
 /******************************************************************************/
 static void handle_input
 (
-   const ssize_t input_size,
-   const char input [const static 1],
-   struct relabsd_server server [const static 1]
+   const ssize_t input_size __attribute__((unused)),
+   const char input [const static 1] __attribute__((unused)),
+   struct relabsd_server server [const static 1] __attribute__((unused))
 )
 {
 }

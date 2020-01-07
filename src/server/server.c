@@ -21,6 +21,8 @@ static int initialize
 {
    int err;
 
+   relabsd_server_initialize_signal_handlers();
+
    if
    (
       relabsd_physical_device_open
@@ -97,6 +99,7 @@ static void finalize (struct relabsd_server server [const static 1])
    relabsd_physical_device_close(&(server->physical_device));
 
    (void) pthread_mutex_destroy(&(server->mutex));
+   relabsd_server_finalize_signal_handlers();
 }
 
 /******************************************************************************/

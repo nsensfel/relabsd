@@ -164,3 +164,36 @@ int relabsd_server_create_communication_node
 
    return 0;
 }
+
+void relabsd_server_destroy_communication_node
+(
+   const char socket_name [const restrict static 1],
+   const int socket
+)
+{
+   errno = 0;
+
+   if (close(socket) == -1)
+   {
+      RELABSD_WARNING
+      (
+         "Could not properly close the communication socket: %s.",
+         strerror(errno)
+      );
+   }
+
+   errno = 0;
+
+   if (remove(socket_name) == -1)
+   {
+      RELABSD_ERROR
+      (
+         "Could not remove communication node %s. Please delete it manually."
+         " Error: %s.",
+         socket_name,
+         strerror(errno)
+      );
+   }
+
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Destroyed communication node.");
+}

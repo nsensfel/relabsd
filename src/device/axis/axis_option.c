@@ -4,6 +4,8 @@
 /**** RELABSD *****************************************************************/
 #include <relabsd/debug.h>
 
+#include <relabsd/util/string.h>
+
 #include <relabsd/device/axis.h>
 
 /******************************************************************************/
@@ -25,7 +27,7 @@ int relabsd_axis_enable_option_from_name
 )
 {
 
-   if (strcmp(option_name, "direct") == 0)
+   if (RELABSD_IS_PREFIX("direct", option_name))
    {
       axis->flags[RELABSD_DIRECT] = 1;
 
@@ -38,11 +40,11 @@ int relabsd_axis_enable_option_from_name
          );
       }
    }
-   else if (strcmp(option_name, "real_fuzz") == 0)
+   else if (RELABSD_IS_PREFIX("real_fuzz", option_name))
    {
       axis->flags[RELABSD_REAL_FUZZ] = 1;
    }
-   else if (strcmp(option_name, "framed") == 0)
+   else if (RELABSD_IS_PREFIX("framed", option_name))
    {
       axis->flags[RELABSD_FRAMED] = 1;
 

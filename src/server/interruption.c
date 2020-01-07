@@ -19,7 +19,7 @@ static void interrupt (int unused_mandatory_parameter __attribute__((unused)))
 
    errno = 0;
 
-   if (write(RELABSD_INTERRUPTION_PIPES[0], (void *) "!", (size_t) 1) == -1)
+   if (write(RELABSD_INTERRUPTION_PIPES[1], (void *) "!", (size_t) 1) == -1)
    {
       RELABSD_ERROR
       (
@@ -82,5 +82,5 @@ void relabsd_server_finalize_signal_handlers (void)
 
 int relabsd_server_get_interruption_file_descriptor (void)
 {
-   return RELABSD_INTERRUPTION_PIPES[1];
+   return RELABSD_INTERRUPTION_PIPES[0];
 }

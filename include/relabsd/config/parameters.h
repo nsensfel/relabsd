@@ -41,6 +41,13 @@ int relabsd_parameters_are_compatible_with
    const struct relabsd_parameters parameters [const restrict static 1]
 );
 
+
+int relabsd_parameters_parse_config_file
+(
+   const char filename [const restrict static 1],
+   struct relabsd_parameters parameters [const restrict static 1]
+);
+
 /**** Accessors ***************************************************************/
 void relabsd_parameters_initialize_options
 (

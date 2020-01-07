@@ -60,7 +60,12 @@ int relabsd_physical_device_open
 {
    int err;
 
-   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Opening physical device...");
+   RELABSD_DEBUG
+   (
+      RELABSD_DEBUG_PROGRAM_FLOW,
+      "Opening physical device %s...",
+      filename
+   );
 
    errno = 0;
    device->file = open(filename, O_RDONLY);

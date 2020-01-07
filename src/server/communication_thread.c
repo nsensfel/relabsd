@@ -1,10 +1,16 @@
 /**** POSIX *******************************************************************/
+#include <sys/select.h>
+#include <sys/socket.h>
+
+#include <errno.h>
 #include <pthread.h>
 #include <string.h>
 
 /**** RELABSD *****************************************************************/
 #include <relabsd/debug.h>
 #include <relabsd/server.h>
+
+#include <relabsd/config/parameters.h>
 
 /******************************************************************************/
 /**** LOCAL FUNCTIONS *********************************************************/
@@ -48,6 +54,8 @@ static void main_loop (struct relabsd_server server [const static 1])
       FD_SET(communication_socket, &ready_to_read);
       FD_SET(interrupt_fd, &ready_to_read);
 
+      errno = 0;
+
       ready_fds =
          select
          (
@@ -58,10 +66,30 @@ static void main_loop (struct relabsd_server server [const static 1])
             (struct timeval *) NULL
          );
 
+      if (ready_fds == -1)
+      {
+         RELABSD_ERROR
+         (
+            "Unable to select on the server's socket: %s.",
+            strerror(errno)
+         );
+
+         relabsd_server_interrupt();
+      }
+
       /* TODO: select error handling. */
 
       if (!relabsd_server_keep_running())
       {
+         relabsd_server_destroy_communication_node
+         (
+            relabsd_parameters_get_communication_node_name
+            (
+               &(server->parameters)
+            ),
+            communication_socket
+         );
+
          return;
       }
 
@@ -83,7 +111,17 @@ static void main_loop (struct relabsd_server server [const static 1])
             strerror(errno)
          );
 
-         return -1;
+         relabsd_server_interrupt();
+         relabsd_server_destroy_communication_node
+         (
+            relabsd_parameters_get_communication_node_name
+            (
+               &(server->parameters)
+            ),
+            communication_socket
+         );
+
+         return;
       }
 
       (void) relabsd_server_handle_client(current_client_socket, server);
