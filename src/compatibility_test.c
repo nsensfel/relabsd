@@ -25,6 +25,8 @@ static int test_for_axis_and_print_info
 
    device_has_rel = 0;
 
+   printf("Name: %s\n", libevdev_get_name(libevdev));
+
    for (i = 0; i < RELABSD_AXIS_VALID_AXES_COUNT; ++i)
    {
       rel_code = relabsd_axis_name_to_evdev_rel((enum relabsd_axis_name) i);
@@ -81,6 +83,8 @@ int relabsd_compatibility_test_main
 
    if (!is_compatible)
    {
+      printf("No relative axes.\n");
+
       return 0;
    }
 
