@@ -82,23 +82,24 @@ static int read_axis_options
             break;
 
          case ',':
-            i = 0;
-            option[i] = '\n';
+            option[i] = '\0';
             /* We parsed a new option and there is a least another. */
             (void)
                relabsd_axis_enable_option_from_name(option, axis_name, axis);
 
+            i = 0;
+
             break;
 
          case '\n':
-            option[i] = '\n';
+            option[i] = '\0';
             (void)
                relabsd_axis_enable_option_from_name(option, axis_name, axis);
 
             return 1;
 
          case EOF:
-            option[i] = '\n';
+            option[i] = '\0';
             (void)
                relabsd_axis_enable_option_from_name(option, axis_name, axis);
 
@@ -181,7 +182,7 @@ static int parse_timeout_configuration_line
 
    relabsd_parameters_set_timeout(timeout_msec, parameters);
 
-   return 0;
+   return 1;
 }
 
 /*
@@ -203,7 +204,11 @@ static int parse_axis_configuration_line
 
    if (axis_index == RELABSD_UNKNOWN)
    {
-      if (RELABSD_IS_PREFIX("TO", axis_name))
+      if
+      (
+         RELABSD_IS_PREFIX("TO", axis_name)
+         || RELABSD_IS_PREFIX("to", axis_name)
+      )
       {
          return parse_timeout_configuration_line(file, parameters);
       }

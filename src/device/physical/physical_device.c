@@ -225,7 +225,7 @@ int relabsd_physical_device_get_file_descriptor
 
 struct libevdev * relabsd_physical_device_get_libevdev
 (
-   struct relabsd_physical_device device [const restrict static 1]
+   const struct relabsd_physical_device device [const restrict static 1]
 )
 {
    return device->libevdev;
