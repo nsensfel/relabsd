@@ -71,6 +71,16 @@ int relabsd_server_initialize_signal_handlers (void)
       return -1;
    }
 
+   if (signal(SIGTERM, interrupt) == SIG_ERR)
+   {
+      RELABSD_S_FATAL("Unable to set the SIGTERM signal handler.");
+
+      (void) close(RELABSD_INTERRUPTION_PIPES[0]);
+      (void) close(RELABSD_INTERRUPTION_PIPES[1]);
+
+      return -1;
+   }
+
    return 0;
 }
 

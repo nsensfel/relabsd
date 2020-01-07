@@ -40,6 +40,7 @@ int relabsd_server_handle_client
    /* FIXME: reallocating at every new connection is kind of wasteful. */
    char * input;
    ssize_t input_size;
+   size_t input_buffer_size;
 
    errno = 0;
    socket_as_file = fdopen(socket, "r");
@@ -59,7 +60,7 @@ int relabsd_server_handle_client
 
    errno = 0;
 
-   input_size = getline(&input, (size_t *) NULL, socket_as_file);
+   input_size = getline(&input, &input_buffer_size, socket_as_file);
 
    if (input_size < 1)
    {

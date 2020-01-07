@@ -125,7 +125,7 @@ static int send_commands
       (
          i++;
          ((j > 0) && (i < argc));
-         j++, i--
+         j--, i++
       )
       {
          if (fputc(' ', socket) == EOF)

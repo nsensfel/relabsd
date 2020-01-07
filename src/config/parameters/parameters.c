@@ -357,6 +357,14 @@ int relabsd_parameters_argument_count_for
    {
       *result = 1;
    }
+   else if
+   (
+      RELABSD_STRING_EQUALS("-q", option)
+      || RELABSD_STRING_EQUALS("--quit", option)
+   )
+   {
+      *result = 0;
+   }
    else
    {
       return -1;
@@ -402,8 +410,7 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1])
          "\t\tModifies an axis.\n\n"
 
       "\t[-f | --config] <config_file>"
-         "<options>:\n"
-         "\t\t(Re)defines an axis.\n\n"
+         "\t\tUse the options defined in <config_file>.\n\n"
 
       "\t[-q | --quit]:\n"
          "\t\tTerminates the targeted server instance.\n\n"
