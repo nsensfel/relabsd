@@ -12,6 +12,8 @@
 
 #include <relabsd/config/parameters.h>
 
+#include <relabsd/server.h>
+
 #include <relabsd/device/physical_device.h>
 
 /******************************************************************************/
@@ -200,11 +202,18 @@ int relabsd_physical_device_read
          device->is_late = 0;
 
          return -1;
+
+      default:
+         RELABSD_FATAL
+         (
+            "Unable to access the physical device: %s.",
+            strerror(-returned_code)
+         );
+
+         relabsd_server_interrupt();
+
+         return -1;
    }
-
-   RELABSD_S_PROG_ERROR("Reached what is supposed to be dead code.");
-
-   return -1;
 }
 
 int relabsd_physical_device_is_late

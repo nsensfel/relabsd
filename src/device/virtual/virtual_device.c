@@ -213,7 +213,7 @@ int relabsd_virtual_device_create_from
       (
          physical_device_libevdev,
          /* See top of the file. */
-         RELABSD_UINPUT_OPEN_MANAGED,
+         LIBEVDEV_UINPUT_OPEN_MANAGED,
          &(device->uinput_device)
       );
 
