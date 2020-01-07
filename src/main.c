@@ -1,5 +1,6 @@
 /**** RELABSD *****************************************************************/
 #include <relabsd/client.h>
+#include <relabsd/compatibility_test.h>
 #include <relabsd/config.h>
 #include <relabsd/debug.h>
 #include <relabsd/server.h>
@@ -41,7 +42,7 @@ int main (int const argc, const char * const * const argv)
 
       case RELABSD_PARAMETERS_COMPATIBILITY_TEST_MODE:
          /* TODO: implement this. */
-         RELABSD_S_FATAL("Compatibility test mode not implemented.");
+         retval = relabsd_compatibility_test_main(argc, argv, &params);
          break;
    }
 

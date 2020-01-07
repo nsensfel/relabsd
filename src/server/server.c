@@ -132,7 +132,10 @@ int relabsd_server_main
       return -2;
    }
 
-   (void) initialize(&server);
+   if (initialize(&server) < 0)
+   {
+      return -1;
+   }
 
    (void) relabsd_server_conversion_loop(&server);
 

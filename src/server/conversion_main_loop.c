@@ -74,6 +74,12 @@ static void convert_input
                abs_code,
                value
             );
+
+            relabsd_virtual_device_set_has_already_timed_out
+            (
+               0,
+               &(server->virtual_device)
+            );
             return;
 
          case 0:
@@ -105,6 +111,12 @@ static void reset_axes
    struct relabsd_server server [const restrict static 1]
 )
 {
+   relabsd_virtual_device_set_has_already_timed_out
+   (
+      1,
+      &(server->virtual_device)
+   );
+
    relabsd_virtual_device_set_axes_to_zero
    (
       &(server->parameters),
@@ -146,7 +158,12 @@ static int wait_for_next_event
 
    errno = 0;
 
-   if (relabsd_parameters_use_timeout(&(server->parameters)))
+   if
+   (
+      relabsd_parameters_use_timeout(&(server->parameters))
+      &&
+      !relabsd_virtual_device_has_already_timed_out(&(server->virtual_device))
+   )
    {
       struct timeval curr_timeout;
 

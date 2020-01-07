@@ -148,6 +148,32 @@ int relabsd_parameters_parse_execution_mode
       parameters->physical_device_file_name = argv[2];
       parameters->read_argc = 2;
    }
+   else if (argc == 3)
+   {
+      parameters->mode = RELABSD_PARAMETERS_SERVER_MODE;
+      parameters->communication_node_name = (char *) NULL;
+      parameters->physical_device_file_name = argv[1];
+      parameters->read_argc = 2;
+
+      if (relabsd_parameters_parse_config_file(argv[2], parameters) < 0)
+      {
+         return -1;
+      }
+   }
+   else if (argc == 4)
+   {
+      parameters->mode = RELABSD_PARAMETERS_SERVER_MODE;
+      parameters->communication_node_name = (char *) NULL;
+      parameters->physical_device_file_name = argv[1];
+
+      if (relabsd_parameters_parse_config_file(argv[2], parameters) < 0)
+      {
+         return -1;
+      }
+
+      parameters->device_name = argv[3];
+      parameters->read_argc = 3;
+   }
    else
    {
       relabsd_parameters_print_usage(argv[0]);
@@ -377,25 +403,27 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1])
 {
    printf
    (
-      "USAGE: %s <MODE> [<OPTION>+]\n\n"
+      "USAGES:\n"
+         "\t%s <physical_device_file> <config_file>\n"
+         "\t%s <physical_device_file> <config_file> <relabsd_device_name>\n"
+         "\t\tLegacy usage.\n\n"
 
-      "<MODE>:\n"
-      "\t[-? | --compatible] <physical_device_file>:\n"
-         "\t\tDevice compatibility test.\n\n"
+         "\t%s [-? | --compatible] <physical_device_file> [<CONF_OPTION>+]\n"
+         "\t\tDevice & configuration compatibility test.\n\n"
 
-      "\t[-c | --client] <server_file>:\n"
+         "\t%s [-c | --client] <server_file> [(<CLIENT_OPTION>|<CONF_OPTION>)+]"
+         "\n"
          "\t\tSends the commands to a given server instance.\n\n"
 
-      "\t[-s | --server] <server_file> <physical_device_file>:\n"
-         "\t\tCreates a named server instance.\n\n"
+         "\t%s [-s | --server] <server_file> <physical_device_file>"
+         " [(<SERVER_OPTION>|<CONF_OPTION>)+]:\n"
+            "\t\tCreates a named server instance.\n\n"
 
-      "\t[-1 | --self] <physical_device_file>:\n"
-         "\t\tCreates a unnamed server instance.\n\n"
+         "\t%s [-1 | --self] <physical_device_file>"
+         " [(<SERVER_OPTION>|<CONF_OPTION>)+]:\n"
+            "\t\tCreates an unnamed server instance.\n\n"
 
-      "<OPTION>:\n"
-      "\t[-d | --daemon]:\n"
-         "\t\tRuns server instance in the background.\n\n"
-
+      "<CONF_OPTION>:\n"
       "\t[-n | --name] <relabsd_device_name>:\n"
          "\t\tNames the virtual device.\n\n"
 
@@ -406,16 +434,25 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1])
          "<options>:\n"
          "\t\t(Re)defines an axis.\n\n"
 
-      "\t[-m | --mod-axis] <name> <MOD_PARAM> [+|-|=]<value>:\n"
+      "\t[-m | --mod-axis] <name> [min|max|fuzz|flat|resolution]"
+         " [+|-|=]<value>:\n"
          "\t\tModifies an axis.\n\n"
 
       "\t[-f | --config] <config_file>"
          "\t\tUse the options defined in <config_file>.\n\n"
 
-      "\t[-q | --quit]:\n"
-         "\t\tTerminates the targeted server instance.\n\n"
+      "<SERVER_OPTION>:\n"
+      "\t[-d | --daemon]:\n"
+         "\t\tRuns server instance in the background.\n\n"
 
-      "<MOD_PARAM>: [min|max|fuzz|flat|resolution]\n",
+      "<CLIENT_OPTION>:\n"
+      "\t[-q | --quit]:\n"
+         "\t\tTerminates the targeted server instance.\n",
+      exec,
+      exec,
+      exec,
+      exec,
+      exec,
       exec
    );
 }

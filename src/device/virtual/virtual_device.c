@@ -161,6 +161,8 @@ int relabsd_virtual_device_create_from
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Creating virtual device...");
 
+   device->already_timed_out = 0;
+
    errno = 0;
    physical_device_file =
       open
@@ -316,7 +318,7 @@ int relabsd_virtual_device_write_evdev_event
 
 void relabsd_virtual_device_set_axes_to_zero
 (
-   struct relabsd_parameters parameters [const restrict static 1],
+   struct relabsd_parameters parameters [const static 1],
    const struct relabsd_virtual_device device [const restrict static 1]
 )
 {
@@ -324,13 +326,12 @@ void relabsd_virtual_device_set_axes_to_zero
 
    for (i = 0; i < RELABSD_AXIS_VALID_AXES_COUNT; ++i)
    {
-      if
-      (
-         relabsd_axis_is_enabled
-         (
-            relabsd_parameters_get_axis((enum relabsd_axis_name) i, parameters)
-         )
-      )
+      struct relabsd_axis * axis;
+
+      axis =
+         relabsd_parameters_get_axis((enum relabsd_axis_name) i, parameters);
+
+      if (relabsd_axis_is_enabled(axis))
       {
          relabsd_virtual_device_write_evdev_event
          (
@@ -339,24 +340,33 @@ void relabsd_virtual_device_set_axes_to_zero
             relabsd_axis_name_to_evdev_abs((enum relabsd_axis_name) i),
             0
          );
+
+         axis->previous_value = 0;
       }
    }
 
-   /*
-    * Also send a SYN event when the axes have been modified.
-    */
-   i =
-      libevdev_uinput_write_event(device->uinput_device, EV_SYN, SYN_REPORT, 0);
-
-   if (i != 0)
-   {
-      RELABSD_ERROR
-      (
-         "Unable to generate event"
-         " {type = EV_SYN; code = SYN_REPORT; value = 0}:"
-         " %s.",
-         strerror(-i)
-      );
-   }
+   (void) relabsd_virtual_device_write_evdev_event
+   (
+      device,
+      EV_SYN,
+      SYN_REPORT,
+      0
+   );
 }
 
+void relabsd_virtual_device_set_has_already_timed_out
+(
+   const int val,
+   struct relabsd_virtual_device device [const restrict static 1]
+)
+{
+   device->already_timed_out = val;
+}
+
+int relabsd_virtual_device_has_already_timed_out
+(
+   const struct relabsd_virtual_device device [const restrict static 1]
+)
+{
+   return device->already_timed_out;
+}

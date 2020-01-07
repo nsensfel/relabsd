@@ -54,3 +54,14 @@ void relabsd_virtual_device_set_axes_to_zero
    struct relabsd_parameters parameters [const restrict static 1],
    const struct relabsd_virtual_device device [const restrict static 1]
 );
+
+void relabsd_virtual_device_set_has_already_timed_out
+(
+   const int val,
+   struct relabsd_virtual_device device [const restrict static 1]
+);
+
+int relabsd_virtual_device_has_already_timed_out
+(
+   const struct relabsd_virtual_device device [const restrict static 1]
+);
