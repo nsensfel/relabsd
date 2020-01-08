@@ -121,6 +121,11 @@ static int send_commands
          return -1;
       }
 
+      if (fputc('\n', socket) == EOF)
+      {
+         // TODO: error
+      }
+
       for
       (
          i++;
@@ -128,19 +133,15 @@ static int send_commands
          j--, i++
       )
       {
-         if (fputc(' ', socket) == EOF)
-         {
-            // TODO: error
-         }
          if (fputs(argv[i], socket) == EOF)
          {
             // TODO: error
          }
-      }
 
-      if (fputc('\0', socket) == EOF)
-      {
-         // TODO: error
+         if (fputc('\n', socket) == EOF)
+         {
+            // TODO: error
+         }
       }
    }
 

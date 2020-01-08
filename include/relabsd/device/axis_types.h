@@ -40,4 +40,5 @@ struct relabsd_axis
    int is_enabled;
    int previous_value;
    int flags[RELABSD_AXIS_FLAGS_COUNT];
+   int attributes_were_modified;
 };

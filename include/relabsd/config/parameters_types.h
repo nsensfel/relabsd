@@ -23,4 +23,5 @@ struct relabsd_parameters
    int use_timeout;
    struct timeval timeout;
    struct relabsd_axis axes[RELABSD_AXIS_VALID_AXES_COUNT];
+   int device_name_was_modified;
 };

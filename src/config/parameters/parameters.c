@@ -337,8 +337,8 @@ int relabsd_parameters_argument_count_for
 {
    if
    (
-      RELABSD_STRING_EQUALS("-n", option)
-      || RELABSD_STRING_EQUALS("--name", option)
+      RELABSD_STRING_EQUALS("-q", option)
+      || RELABSD_STRING_EQUALS("--quit", option)
    )
    {
       *result = 0;
@@ -373,7 +373,7 @@ int relabsd_parameters_argument_count_for
       || RELABSD_STRING_EQUALS("--mod-axis", option)
    )
    {
-      *result = 7;
+      *result = 3;
    }
    else if
    (
@@ -411,7 +411,8 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1])
          "\t%s [-? | --compatible] <physical_device_file> [<CONF_OPTION>+]\n"
          "\t\tDevice & configuration compatibility test.\n\n"
 
-         "\t%s [-c | --client] <server_file> [(<CLIENT_OPTION>|<CONF_OPTION>)+]"
+         "\t%s [-c | --client] <server_file> "
+            "[(<CLIENT_OPTION>|<GLOBAL_CONF_OPTION>)+]"
          "\n"
          "\t\tSends the commands to a given server instance.\n\n"
 
@@ -423,20 +424,23 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1])
          " [(<SERVER_OPTION>|<CONF_OPTION>)+]:\n"
             "\t\tCreates an unnamed server instance.\n\n"
 
-      "<CONF_OPTION>:\n"
+      "<GLOBAL_CONF_OPTION>:\n"
       "\t[-n | --name] <relabsd_device_name>:\n"
          "\t\tNames the virtual device.\n\n"
 
       "\t[-t | --timeout] <timeout_in_ms>:\n"
          "\t\tSets a zeroing timeout (0 to disable).\n\n"
 
+      "\t[-m | --mod-axis] <name> [min|max|fuzz|flat|resolution|enable]"
+         " [+|-|=]<value>:\n"
+         "\t\tModifies an axis.\n\n"
+
+      "<CONF_OPTION>:\n"
+      "\t<GLOBAL_CONF_OPTION>\n\n"
+
       "\t[-a | --axis] <name> <min> <max> <fuzz> <flat> <resolution> "
          "<options>:\n"
          "\t\t(Re)defines an axis.\n\n"
-
-      "\t[-m | --mod-axis] <name> [min|max|fuzz|flat|resolution]"
-         " [+|-|=]<value>:\n"
-         "\t\tModifies an axis.\n\n"
 
       "\t[-f | --config] <config_file>"
          "\t\tUse the options defined in <config_file>.\n\n"

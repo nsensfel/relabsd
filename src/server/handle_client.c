@@ -15,17 +15,11 @@
 #include <relabsd/debug.h>
 #include <relabsd/server.h>
 
+#include <relabsd/config/parameters.h>
+
 /******************************************************************************/
 /**** LOCAL FUNCTIONS *********************************************************/
 /******************************************************************************/
-static void handle_input
-(
-   const ssize_t input_size __attribute__((unused)),
-   const char input [const static 1] __attribute__((unused)),
-   struct relabsd_server server [const static 1] __attribute__((unused))
-)
-{
-}
 
 /******************************************************************************/
 /**** EXPORTED FUNCTIONS ******************************************************/
@@ -37,10 +31,6 @@ int relabsd_server_handle_client
 )
 {
    FILE * socket_as_file;
-   /* FIXME: reallocating at every new connection is kind of wasteful. */
-   char * input;
-   ssize_t input_size;
-   size_t input_buffer_size;
 
    errno = 0;
    socket_as_file = fdopen(socket, "r");
@@ -58,29 +48,13 @@ int relabsd_server_handle_client
       return -1;
    }
 
-   errno = 0;
-
-   input_size = getline(&input, &input_buffer_size, socket_as_file);
-
-   if (input_size < 1)
-   {
-      RELABSD_ERROR
-      (
-         "Unable to read line from client socket: %s.",
-         strerror(errno)
-      );
-
-      (void) free((void *) input);
-
-      /* This also closes 'socket' */
-      (void) fclose(socket_as_file);
-
-      return -1;
-   }
-
-   handle_input(input_size, input, server);
-
-   (void) free((void *) input);
+   pthread_mutex_lock(&(server->mutex));
+   (void) relabsd_parameters_handle_remote_client
+   (
+      socket_as_file,
+      &(server->parameters)
+   );
+   pthread_mutex_unlock(&(server->mutex));
 
    /* This also closes 'socket' */
    (void) fclose(socket_as_file);

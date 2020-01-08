@@ -1,5 +1,8 @@
 #pragma once
 
+/**** POSIX *******************************************************************/
+#include <stdio.h>
+
 /**** LIBEVDEV ****************************************************************/
 #include <libevdev/libevdev.h>
 
@@ -45,6 +48,12 @@ int relabsd_parameters_are_compatible_with
 int relabsd_parameters_parse_config_file
 (
    const char filename [const restrict static 1],
+   struct relabsd_parameters parameters [const restrict static 1]
+);
+
+int relabsd_parameters_handle_remote_client
+(
+   FILE socket_as_file [const static 1],
    struct relabsd_parameters parameters [const restrict static 1]
 );
 
