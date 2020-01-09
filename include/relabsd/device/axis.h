@@ -79,7 +79,7 @@ int relabsd_axis_is_enabled
 
 void relabsd_axis_to_absinfo
 (
-   struct relabsd_axis axis [const restrict static 1],
+   const struct relabsd_axis axis [const restrict static 1],
    struct input_absinfo absinfo [const restrict static 1]
 );
 
@@ -91,5 +91,16 @@ int relabsd_axis_filter_new_value
 
 void relabsd_axis_initialize
 (
+   struct relabsd_axis axis [const restrict static 1]
+);
+
+int relabsd_axis_attributes_are_dirty
+(
+   const struct relabsd_axis axis [const restrict static 1]
+);
+
+void relabsd_axis_set_attributes_are_dirty
+(
+   const int val,
    struct relabsd_axis axis [const restrict static 1]
 );

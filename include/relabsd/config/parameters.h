@@ -109,3 +109,13 @@ int relabsd_parameters_use_timeout
 (
    const struct relabsd_parameters parameters [const restrict static 1]
 );
+
+int relabsd_parameters_device_name_is_dirty
+(
+   const struct relabsd_parameters parameters [const restrict static 1]
+);
+
+void relabsd_parameters_clean_device_name
+(
+   struct relabsd_parameters parameters [const restrict static 1]
+);

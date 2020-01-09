@@ -24,7 +24,7 @@ void relabsd_axis_initialize
 
 void relabsd_axis_to_absinfo
 (
-   struct relabsd_axis axis [const restrict static 1],
+   const struct relabsd_axis axis [const restrict static 1],
    struct input_absinfo absinfo [const restrict static 1]
 )
 {
@@ -50,4 +50,21 @@ int relabsd_axis_is_enabled
 )
 {
    return axis->is_enabled;
+}
+
+int relabsd_axis_attributes_are_dirty
+(
+   const struct relabsd_axis axis [const restrict static 1]
+)
+{
+   return axis->attributes_were_modified;
+}
+
+void relabsd_axis_set_attributes_are_dirty
+(
+   const int val,
+   struct relabsd_axis axis [const restrict static 1]
+)
+{
+   axis->attributes_were_modified = val;
 }

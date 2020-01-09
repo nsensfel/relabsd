@@ -315,6 +315,21 @@ int relabsd_parameters_parse_options
             return -1;
          }
       }
+      else if
+      (
+         RELABSD_STRING_EQUALS("-m", argv[i])
+         || RELABSD_STRING_EQUALS("--mod-axis", argv[i])
+         || RELABSD_STRING_EQUALS("-o", argv[i])
+         || RELABSD_STRING_EQUALS("--toggle-argv[i]", argv[i])
+         ||RELABSD_STRING_EQUALS("-q", argv[i])
+         || RELABSD_STRING_EQUALS("--quit", argv[i])
+      )
+      {
+         RELABSD_FATAL("\"%s\" is not available in this mode.", argv[i]);
+         relabsd_parameters_print_usage(argv[0]);
+
+         return -1;
+      }
       else
       {
          RELABSD_FATAL("Unknown <OPTION> \"%s\".", argv[i]);
@@ -361,14 +376,6 @@ int relabsd_parameters_argument_count_for
    }
    else if
    (
-      RELABSD_STRING_EQUALS("-a", option)
-      || RELABSD_STRING_EQUALS("--axis", option)
-   )
-   {
-      *result = 7;
-   }
-   else if
-   (
       RELABSD_STRING_EQUALS("-m", option)
       || RELABSD_STRING_EQUALS("--mod-axis", option)
    )
@@ -377,19 +384,24 @@ int relabsd_parameters_argument_count_for
    }
    else if
    (
-      RELABSD_STRING_EQUALS("-f", option)
-      || RELABSD_STRING_EQUALS("--config", option)
+      RELABSD_STRING_EQUALS("-o", option)
+      || RELABSD_STRING_EQUALS("--toggle-option", option)
    )
    {
-      *result = 1;
+      *result = 2;
    }
    else if
    (
-      RELABSD_STRING_EQUALS("-q", option)
-      || RELABSD_STRING_EQUALS("--quit", option)
+      RELABSD_STRING_EQUALS("-d", option)
+      || RELABSD_STRING_EQUALS("--daemon", option)
+      || RELABSD_STRING_EQUALS("-f", option)
+      || RELABSD_STRING_EQUALS("--config", option)
+      || RELABSD_STRING_EQUALS("-a", option)
+      || RELABSD_STRING_EQUALS("--axis", option)
    )
    {
-      *result = 0;
+      RELABSD_ERROR("\"%s\" is not available in this mode.", option);
+      relabsd_parameters_print_usage("relabsd");
    }
    else
    {
@@ -412,46 +424,48 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1])
          "\t\tDevice & configuration compatibility test.\n\n"
 
          "\t%s [-c | --client] <server_file> "
-            "[(<CLIENT_OPTION>|<GLOBAL_CONF_OPTION>)+]"
-         "\n"
+            "[(<CLIENT_OPTION>|<GLOBAL_CONF_OPTION>)+]\n"
          "\t\tSends the commands to a given server instance.\n\n"
 
          "\t%s [-s | --server] <server_file> <physical_device_file>"
-         " [(<SERVER_OPTION>|<CONF_OPTION>)+]:\n"
+         " [(<SERVER_OPTION>|<CONF_OPTION>)+]\n"
             "\t\tCreates a named server instance.\n\n"
 
          "\t%s [-1 | --self] <physical_device_file>"
-         " [(<SERVER_OPTION>|<CONF_OPTION>)+]:\n"
+         " [(<SERVER_OPTION>|<CONF_OPTION>)+]\n"
             "\t\tCreates an unnamed server instance.\n\n"
 
       "<GLOBAL_CONF_OPTION>:\n"
-      "\t[-n | --name] <relabsd_device_name>:\n"
+      "\t[-n | --name] <relabsd_device_name>\n"
          "\t\tNames the virtual device.\n\n"
 
-      "\t[-t | --timeout] <timeout_in_ms>:\n"
+      "\t[-t | --timeout] <timeout_in_ms>\n"
          "\t\tSets a zeroing timeout (0 to disable).\n\n"
-
-      "\t[-m | --mod-axis] <name> [min|max|fuzz|flat|resolution|enable]"
-         " [+|-|=]<value>:\n"
-         "\t\tModifies an axis.\n\n"
 
       "<CONF_OPTION>:\n"
       "\t<GLOBAL_CONF_OPTION>\n\n"
 
       "\t[-a | --axis] <name> <min> <max> <fuzz> <flat> <resolution> "
-         "<options>:\n"
+         "<options>\n"
          "\t\t(Re)defines an axis.\n\n"
 
-      "\t[-f | --config] <config_file>"
+      "\t[-f | --config] <config_file>\n"
          "\t\tUse the options defined in <config_file>.\n\n"
 
       "<SERVER_OPTION>:\n"
-      "\t[-d | --daemon]:\n"
+      "\t[-d | --daemon]\n"
          "\t\tRuns server instance in the background.\n\n"
 
       "<CLIENT_OPTION>:\n"
-      "\t[-q | --quit]:\n"
-         "\t\tTerminates the targeted server instance.\n",
+      "\t[-q | --quit]\n"
+         "\t\tTerminates the targeted server instance.\n\n"
+
+      "\t[-m | --mod-axis] <axis_name> [min|max|fuzz|flat|resolution]"
+         " [+|-|=]<value>\n"
+         "\t\tModifies an axis.\n\n"
+
+      "\t[-o | --toggle-option] <axis_name> [direct|real_fuzz|framed|enable]\n"
+         "\t\tToggles an axis option.\n",
       exec,
       exec,
       exec,

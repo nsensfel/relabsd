@@ -39,31 +39,21 @@ static void replace_rel_axes
 
       if (relabsd_axis_is_enabled(axis))
       {
-         struct input_absinfo absinfo;
-
-         relabsd_axis_to_absinfo(axis, &absinfo);
-
-         /* TODO: report failure? 0 on success, -1 otherwise, no cause given. */
-         (void) libevdev_disable_event_code
+         (void) relabsd_virtual_device_update_axis_absinfo
          (
-            device->libevdev,
-            EV_REL,
-            relabsd_axis_name_to_evdev_rel(axis_name)
-         );
-
-         (void) libevdev_enable_event_code
-         (
-            device->libevdev,
-            EV_ABS,
-            relabsd_axis_name_to_evdev_abs(axis_name),
-            &absinfo
+            axis_name,
+            axis,
+            device
          );
       }
    }
-
 }
 
-static int rename_device
+
+/******************************************************************************/
+/**** EXPORTED FUNCTIONS ******************************************************/
+/******************************************************************************/
+int relabsd_virtual_device_rename
 (
    const struct relabsd_parameters parameters [const restrict static 1],
    const struct relabsd_virtual_device device [const restrict static 1]
@@ -146,9 +136,36 @@ static int rename_device
    return 0;
 }
 
-/******************************************************************************/
-/**** EXPORTED FUNCTIONS ******************************************************/
-/******************************************************************************/
+int relabsd_virtual_device_update_axis_absinfo
+(
+   const enum relabsd_axis_name axis_name,
+   const struct relabsd_axis axis [const restrict static 1],
+   const struct relabsd_virtual_device device [const restrict static 1]
+)
+{
+   struct input_absinfo absinfo;
+
+   relabsd_axis_to_absinfo(axis, &absinfo);
+
+   /* TODO: report failure? 0 on success, -1 otherwise, no cause given. */
+   (void) libevdev_disable_event_code
+   (
+      device->libevdev,
+      EV_REL,
+      relabsd_axis_name_to_evdev_rel(axis_name)
+   );
+
+   (void) libevdev_enable_event_code
+   (
+      device->libevdev,
+      EV_ABS,
+      relabsd_axis_name_to_evdev_abs(axis_name),
+      &absinfo
+   );
+
+   return 0;
+}
+
 int relabsd_virtual_device_create_from
 (
    struct relabsd_parameters parameters [const restrict static 1],
@@ -202,7 +219,7 @@ int relabsd_virtual_device_create_from
    device->libevdev = physical_device_libevdev;
 
    /* Not exactly fatal, is it? */
-   (void) rename_device(parameters, device);
+   (void) relabsd_virtual_device_rename(parameters, device);
 
    libevdev_enable_event_type(physical_device_libevdev, EV_ABS);
 
@@ -241,6 +258,36 @@ int relabsd_virtual_device_create_from
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Created virtual device.");
 
+   return 0;
+}
+
+int relabsd_virtual_device_recreate
+(
+   struct relabsd_virtual_device device [const restrict static 1]
+)
+{
+   int err;
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Recreating virtual device...");
+
+   libevdev_uinput_destroy(device->uinput_device);
+
+   err =
+      libevdev_uinput_create_from_device
+      (
+         (device->libevdev),
+         /* See top of the file. */
+         LIBEVDEV_UINPUT_OPEN_MANAGED,
+         &(device->uinput_device)
+      );
+
+   if (err !=  0)
+   {
+      RELABSD_FATAL("Could not recreate uinput device: %s.", strerror(-err));
+
+      return -1;
+   }
+
+   RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Recreated virtual device.");
    return 0;
 }
 

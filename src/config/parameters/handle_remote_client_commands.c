@@ -58,6 +58,10 @@ static int get_next_argument
       return -1;
    }
 
+   /*
+    * size is "not including the terminating null byte", so it's the '\n'
+    * character.
+    */
    input->buffer[(input->size - 1)] = '\0';
 
    return 0;
@@ -89,7 +93,7 @@ static void finalize_client_input
 static int handle_timeout_change
 (
    struct relabsd_parameters_client_input input [const restrict static 1],
-   struct relabsd_parameters parameters [const static 1]
+   struct relabsd_parameters parameters [const restrict static 1]
 )
 {
    int timeout_msec;
@@ -113,10 +117,279 @@ static int handle_timeout_change
    return 0;
 }
 
-static int handle_inputs
+static int handle_name_change
+(
+   struct relabsd_parameters_client_input input [const restrict static 1],
+   struct relabsd_parameters parameters [const restrict static 1]
+)
+{
+   const char * device_name;
+
+   if (get_next_argument(input) < 0)
+   {
+      RELABSD_S_ERROR("Could not get device name value from client.");
+
+      return -1;
+   }
+
+   device_name =
+      (const char *) calloc((size_t) (input->size - 1), sizeof(char));
+
+   if (device_name == (const char *) NULL)
+   {
+      RELABSD_S_ERROR
+      (
+         "Could not allocate memory to store the device name requested by"
+         " the client."
+      );
+
+      return -1;
+   }
+
+   (void) memcpy
+   (
+      (void *) device_name,
+      (const void *) input->buffer,
+      (size_t) (input->size - 1)
+   );
+
+   if (parameters->device_name_was_modified)
+   {
+      free((void *) parameters->device_name);
+   }
+
+   parameters->device_name = device_name;
+   parameters->device_name_was_modified = 1;
+
+   return 0;
+}
+
+static int handle_axis_mod
 (
    struct relabsd_parameters_client_input input [const restrict static 1],
    struct relabsd_parameters parameters [const static 1]
+)
+{
+   enum relabsd_axis_name axis_name;
+   int * value_to_modify;
+   int min_value;
+   int input_value;
+
+   if (get_next_argument(input) < 0)
+   {
+      RELABSD_S_ERROR("Could not get name of axis to modify from client.");
+
+      return -1;
+   }
+
+   axis_name = relabsd_axis_parse_name(input->buffer);
+
+   if (axis_name == RELABSD_UNKNOWN)
+   {
+      RELABSD_ERROR
+      (
+         "Client requested modification on unknown axis \"%s\".",
+         input->buffer
+      );
+
+      return -1;
+   }
+
+   if (get_next_argument(input) < 0)
+   {
+      RELABSD_S_ERROR("Could not get parameter of axis to modify from client.");
+
+      return -1;
+   }
+
+   if (RELABSD_STRING_EQUALS("min", input->buffer))
+   {
+      value_to_modify = &(parameters->axes[axis_name].min);
+      min_value = INT_MIN;
+   }
+   else if (RELABSD_STRING_EQUALS("max", input->buffer))
+   {
+      value_to_modify = &(parameters->axes[axis_name].max);
+      min_value = INT_MIN;
+   }
+   else if (RELABSD_STRING_EQUALS("fuzz", input->buffer))
+   {
+      value_to_modify = &(parameters->axes[axis_name].fuzz);
+      min_value = 0;
+   }
+   else if (RELABSD_STRING_EQUALS("flat", input->buffer))
+   {
+      value_to_modify = &(parameters->axes[axis_name].flat);
+      min_value = 0;
+   }
+   else if (RELABSD_STRING_EQUALS("resolution", input->buffer))
+   {
+      value_to_modify = &(parameters->axes[axis_name].resolution);
+      min_value = 0;
+   }
+   else
+   {
+      RELABSD_ERROR
+      (
+         "Client requested modification on unknown axis parameter \"%s\".",
+         input->buffer
+      );
+
+      return -1;
+   }
+
+   if (get_next_argument(input) < 0)
+   {
+      RELABSD_S_ERROR
+      (
+         "Could not get new value for axis modification requested by client."
+      );
+
+      return -1;
+   }
+
+   if
+   (
+      relabsd_util_parse_int
+      (
+         (input->buffer + 1),
+         min_value,
+         INT_MAX,
+         &input_value
+      )
+      < 0
+   )
+   {
+      RELABSD_ERROR
+      (
+         "Invalid value \"%s\"for axis modification requested by client.",
+         (input->buffer + 1)
+      );
+
+      return -1;
+   }
+
+   switch (input->buffer[0])
+   {
+      case '=':
+         *value_to_modify = input_value;
+         break;
+
+      case '-':
+         if (input_value == INT_MIN)
+         {
+            input_value = INT_MAX;
+         }
+         else
+         {
+            input_value = -input_value;
+         }
+         /* fall through */
+      case '+':
+         if
+         (
+            (
+               (input_value > 0)
+               && (*value_to_modify > (INT_MAX - input_value))
+            )
+            ||
+            (
+               (input_value < 0)
+               && (*value_to_modify < (min_value - input_value))
+            )
+         )
+         {
+            RELABSD_S_WARNING
+            (
+               "Client request would make axis parameter over/underflow."
+            );
+
+            *value_to_modify = (input_value < 0) ? min_value : INT_MAX;
+         }
+         else
+         {
+            *value_to_modify += input_value;
+         }
+         break;
+   }
+
+   parameters->axes[axis_name].previous_value = 0;
+   parameters->axes[axis_name].attributes_were_modified = 1;
+
+   return 0;
+}
+
+static int handle_option_toggle
+(
+   struct relabsd_parameters_client_input input [const restrict static 1],
+   struct relabsd_parameters parameters [const restrict static 1]
+)
+{
+   enum relabsd_axis_name axis_name;
+
+   if (get_next_argument(input) < 0)
+   {
+      RELABSD_S_ERROR("Could not get name of axis to modify from client.");
+
+      return -1;
+   }
+
+   axis_name = relabsd_axis_parse_name(input->buffer);
+
+   if (axis_name == RELABSD_UNKNOWN)
+   {
+      RELABSD_ERROR
+      (
+         "Client requested modification on unknown axis \"%s\".",
+         input->buffer
+      );
+
+      return -1;
+   }
+
+   if (get_next_argument(input) < 0)
+   {
+      RELABSD_S_ERROR("Could not get option of axis to modify from client.");
+
+      return -1;
+   }
+
+   if (RELABSD_STRING_EQUALS("framed", input->buffer))
+   {
+      parameters->axes[axis_name].flags[RELABSD_FRAMED] ^= 1;
+   }
+   else if (RELABSD_STRING_EQUALS("direct", input->buffer))
+   {
+      parameters->axes[axis_name].flags[RELABSD_DIRECT] ^= 1;
+   }
+   else if (RELABSD_STRING_EQUALS("real_fuzz", input->buffer))
+   {
+      parameters->axes[axis_name].flags[RELABSD_REAL_FUZZ] ^= 1;
+   }
+   else if (RELABSD_STRING_EQUALS("enable", input->buffer))
+   {
+      parameters->axes[axis_name].is_enabled ^= 1;
+   }
+   else
+   {
+      RELABSD_ERROR
+      (
+         "Client requested toggle of unknown axis option \"%s\".",
+         input->buffer
+      );
+
+      return -1;
+   }
+
+   parameters->axes[axis_name].previous_value = 0;
+
+   return 0;
+}
+
+static int handle_inputs
+(
+   struct relabsd_parameters_client_input input [const restrict static 1],
+   struct relabsd_parameters parameters [const restrict static 1]
 )
 {
    for (;;)
@@ -148,7 +421,7 @@ static int handle_inputs
       {
          if (handle_timeout_change(input, parameters) < 0)
          {
-            return 0;
+            return -1;
          }
       }
       else if
@@ -157,8 +430,10 @@ static int handle_inputs
          || RELABSD_STRING_EQUALS("--name", input->buffer)
       )
       {
-         /* TODO: implement */
-         RELABSD_PROG_ERROR("Unimplemented command \"%s\".", input->buffer);
+         if (handle_name_change(input, parameters) < 0)
+         {
+            return -1;
+         }
       }
       else if
       (
@@ -166,8 +441,21 @@ static int handle_inputs
          || RELABSD_STRING_EQUALS("--mod-axis", input->buffer)
       )
       {
-         /* TODO: implement */
-         RELABSD_PROG_ERROR("Unimplemented command \"%s\".", input->buffer);
+         if (handle_axis_mod(input, parameters) < 0)
+         {
+            return -1;
+         }
+      }
+      else if
+      (
+         RELABSD_STRING_EQUALS("-o", input->buffer)
+         || RELABSD_STRING_EQUALS("--toggle-option", input->buffer)
+      )
+      {
+         if (handle_option_toggle(input, parameters) < 0)
+         {
+            return -1;
+         }
       }
       else
       {

@@ -25,7 +25,7 @@ int main (int const argc, const char * const * const argv)
 
    if (relabsd_parameters_parse_execution_mode(argc, argv, &params) < 0)
    {
-      RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "relabsd crashing");
+      RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "relabsd crashed.");
 
       return -1;
    }

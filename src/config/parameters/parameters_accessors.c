@@ -26,6 +26,7 @@ void relabsd_parameters_initialize_options
    parameters->device_name = (const char *) NULL;
    parameters->physical_device_file_name = (const char *) NULL;
    parameters->configuration_file = (const char *) NULL;
+   parameters->device_name_was_modified = 0;
 
    for (i = 0; i < RELABSD_AXIS_VALID_AXES_COUNT; ++i)
    {
@@ -124,4 +125,25 @@ struct timeval relabsd_parameters_get_timeout
 )
 {
    return parameters->timeout;
+}
+
+int relabsd_parameters_device_name_is_dirty
+(
+   const struct relabsd_parameters parameters [const restrict static 1]
+)
+{
+   return parameters->device_name_was_modified;
+}
+
+void relabsd_parameters_clean_device_name
+(
+   struct relabsd_parameters parameters [const restrict static 1]
+)
+{
+   if (parameters->device_name_was_modified)
+   {
+      free((void *) parameters->device_name);
+      parameters->device_name = (const char *) NULL;
+      parameters->device_name_was_modified = 0;
+   }
 }

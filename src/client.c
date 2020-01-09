@@ -107,18 +107,17 @@ static int send_commands
 
    for (i = 3; i < argc;)
    {
-
-      if (fputs(argv[i], socket) == EOF)
-      {
-         // TODO: error
-      }
-
       if (relabsd_parameters_argument_count_for(argv[i], &j) < 0)
       {
          RELABSD_FATAL("Unknown option '%s'.", argv[i]);
          relabsd_parameters_print_usage(argv[0]);
 
          return -1;
+      }
+
+      if (fputs(argv[i], socket) == EOF)
+      {
+         // TODO: error
       }
 
       if (fputc('\n', socket) == EOF)
