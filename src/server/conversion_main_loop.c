@@ -42,6 +42,7 @@ static void convert_input
 
    if (input_type == EV_REL)
    {
+      struct relabsd_axis * axis;
       unsigned int abs_code;
       enum relabsd_axis_name axis_name;
 
@@ -53,14 +54,15 @@ static void convert_input
          return;
       }
 
-      switch
-      (
-         relabsd_axis_filter_new_value
-         (
-            relabsd_parameters_get_axis(axis_name, &(server->parameters)),
-            &value
-         )
-      )
+      axis = relabsd_parameters_get_axis(axis_name, &(server->parameters));
+      axis_name = relabsd_axis_get_convert_to(axis);
+
+      if (axis_name != RELABSD_UNKNOWN)
+      {
+         abs_code = relabsd_axis_name_to_evdev_abs(axis_name);
+      }
+
+      switch (relabsd_axis_filter_new_value(axis, &value))
       {
          case -1:
             /* Doesn't want the event to be transmitted. */
@@ -92,6 +94,33 @@ static void convert_input
             );
             return;
       }
+   }
+   else if (input_type == EV_ABS)
+   {
+      enum relabsd_axis_name axis_name;
+
+      axis_name = relabsd_axis_name_from_evdev_abs(input_code);
+
+      if (axis_name != RELABSD_UNKNOWN)
+      {
+         struct relabsd_axis * axis;
+
+         axis = relabsd_parameters_get_axis(axis_name, &(server->parameters));
+         axis_name = relabsd_axis_get_convert_to(axis);
+
+         if (axis_name != RELABSD_UNKNOWN)
+         {
+            input_code = relabsd_axis_name_to_evdev_abs(axis_name);
+         }
+      }
+
+      (void) relabsd_virtual_device_write_evdev_event
+      (
+         &(server->virtual_device),
+         input_type,
+         input_code,
+         value
+      );
    }
    else
    {

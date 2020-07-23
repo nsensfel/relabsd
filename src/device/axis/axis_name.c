@@ -56,6 +56,47 @@ enum relabsd_axis_name relabsd_axis_parse_name
    return RELABSD_UNKNOWN;
 }
 
+enum relabsd_axis_name relabsd_axis_parse_name_from_prefix
+(
+   const char name [const restrict static 1]
+)
+{
+   if (RELABSD_IS_PREFIX("X", name))
+   {
+      return RELABSD_X;
+   }
+   else if (RELABSD_IS_PREFIX("Y", name))
+   {
+      return RELABSD_Y;
+   }
+   else if (RELABSD_IS_PREFIX("Z", name))
+   {
+      return RELABSD_Z;
+   }
+   else if (RELABSD_IS_PREFIX("RX", name))
+   {
+      return RELABSD_RX;
+   }
+   else if (RELABSD_IS_PREFIX("RY", name))
+   {
+      return RELABSD_RY;
+   }
+   else if (RELABSD_IS_PREFIX("RZ", name))
+   {
+      return RELABSD_RZ;
+   }
+   else if (RELABSD_IS_PREFIX("WL", name))
+   {
+      return RELABSD_WHEEL;
+   }
+   else if (RELABSD_IS_PREFIX("MC", name))
+   {
+      return RELABSD_MISC;
+   }
+
+   return RELABSD_UNKNOWN;
+}
+
 const char * relabsd_axis_name_to_string (const enum relabsd_axis_name e)
 {
    switch (e)

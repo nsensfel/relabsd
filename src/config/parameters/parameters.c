@@ -464,7 +464,8 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1])
          " [+|-|=]<value>\n"
          "\t\tModifies an axis.\n\n"
 
-      "\t[-o | --toggle-option] <axis_name> [direct|real_fuzz|framed|enable]\n"
+      "\t[-o | --toggle-option] <axis_name> "
+         "[direct|real_fuzz|framed|enable|convert_to=<axis_name>]\n"
          "\t\tToggles an axis option.\n",
       exec,
       exec,

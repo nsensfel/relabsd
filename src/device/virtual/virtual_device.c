@@ -143,11 +143,23 @@ int relabsd_virtual_device_update_axis_absinfo
    const struct relabsd_virtual_device device [const restrict static 1]
 )
 {
+   enum relabsd_axis_name target_axis_name;
    struct input_absinfo absinfo;
 
    relabsd_axis_to_absinfo(axis, &absinfo);
 
-   /* TODO: report failure? 0 on success, -1 otherwise, no cause given. */
+   target_axis_name = relabsd_axis_get_convert_to(axis);
+
+   if (target_axis_name == RELABSD_UNKNOWN)
+   {
+      target_axis_name = axis_name;
+   }
+
+   /*
+    * TODO: report failure? 0 on success, -1 otherwise, no cause given.
+    * Might want to add an option to see if people want to use the tool to
+    * alter existing EV_ABS axes instead of converting from EV_REL to EV_ABS.
+    */
    (void) libevdev_disable_event_code
    (
       device->libevdev,
@@ -159,7 +171,7 @@ int relabsd_virtual_device_update_axis_absinfo
    (
       device->libevdev,
       EV_ABS,
-      relabsd_axis_name_to_evdev_abs(axis_name),
+      relabsd_axis_name_to_evdev_abs(target_axis_name),
       &absinfo
    );
 
@@ -267,6 +279,7 @@ int relabsd_virtual_device_recreate
 )
 {
    int err;
+
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Recreating virtual device...");
 
    libevdev_uinput_destroy(device->uinput_device);
@@ -288,6 +301,7 @@ int relabsd_virtual_device_recreate
    }
 
    RELABSD_S_DEBUG(RELABSD_DEBUG_PROGRAM_FLOW, "Recreated virtual device.");
+
    return 0;
 }
 

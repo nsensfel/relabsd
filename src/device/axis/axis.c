@@ -20,6 +20,8 @@ void relabsd_axis_initialize
 )
 {
    (void) memset(axis, 0, sizeof(struct relabsd_axis));
+
+   axis->convert_to = RELABSD_UNKNOWN;
 }
 
 void relabsd_axis_to_absinfo
@@ -67,4 +69,12 @@ void relabsd_axis_set_attributes_are_dirty
 )
 {
    axis->attributes_were_modified = val;
+}
+
+enum relabsd_axis_name relabsd_axis_get_convert_to
+(
+   const struct relabsd_axis axis [const restrict static 1]
+)
+{
+   return axis->convert_to;
 }

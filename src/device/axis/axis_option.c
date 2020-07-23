@@ -57,6 +57,25 @@ int relabsd_axis_enable_option_from_name
          );
       }
    }
+   else if (RELABSD_IS_PREFIX("convert_to=", option_name))
+   {
+      axis->convert_to =
+         relabsd_axis_parse_name_from_prefix
+         (
+            option_name + strlen("convert_to=")
+         );
+
+      if (axis->convert_to == RELABSD_UNKNOWN)
+      {
+         RELABSD_ERROR
+         (
+            "Unknown target axis to convert to in config for axis '%s'.",
+            axis_name
+         );
+
+         return -1;
+      }
+   }
    else
    {
       RELABSD_ERROR

@@ -53,6 +53,12 @@ enum relabsd_axis_name relabsd_axis_parse_name
    const char name [const restrict static 1]
 );
 
+/* Same as above, but the string only has to start with the correct name. */
+enum relabsd_axis_name relabsd_axis_parse_name_from_prefix
+(
+   const char name [const restrict static 1]
+);
+
 /*
  * Gives an string representation of an relabsd_axis.
  * "??" is returned for RELABSD_UNKNOWN.
@@ -92,6 +98,11 @@ int relabsd_axis_filter_new_value
 void relabsd_axis_initialize
 (
    struct relabsd_axis axis [const restrict static 1]
+);
+
+enum relabsd_axis_name relabsd_axis_get_convert_to
+(
+   const struct relabsd_axis axis [const restrict static 1]
 );
 
 int relabsd_axis_attributes_are_dirty
