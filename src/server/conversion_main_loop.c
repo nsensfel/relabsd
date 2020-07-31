@@ -171,6 +171,7 @@ static int wait_for_next_event
    {
       highest_fd = interruption_fd;
    }
+   else
    {
       highest_fd = physical_device_fd;
    }
