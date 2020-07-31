@@ -32,7 +32,16 @@ int relabsd_parameters_are_compatible_with
       {
          rel_code = relabsd_axis_name_to_evdev_rel((enum relabsd_axis_name) i);
 
-         if (!libevdev_has_event_code(libevdev, EV_REL, rel_code))
+         if
+         (
+            (!libevdev_has_event_code(libevdev, EV_REL, rel_code))
+            &&
+            (
+               relabsd_axis_get_convert_to(parameters->axes + i)
+               ==
+               RELABSD_UNKNOWN
+            )
+         )
          {
             RELABSD_ERROR
             (

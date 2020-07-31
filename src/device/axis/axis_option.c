@@ -57,6 +57,10 @@ int relabsd_axis_enable_option_from_name
          );
       }
    }
+   else if (RELABSD_IS_PREFIX("notabs", option_name))
+   {
+      axis->flags[RELABSD_NOT_ABS] = 1;
+   }
    else if (RELABSD_IS_PREFIX("convert_to=", option_name))
    {
       axis->convert_to =

@@ -29,6 +29,7 @@ static void replace_rel_axes
 )
 {
    int i;
+
    for (i = 0; i < RELABSD_AXIS_VALID_AXES_COUNT; i++)
    {
       enum relabsd_axis_name axis_name;
@@ -37,7 +38,18 @@ static void replace_rel_axes
       axis_name = ((enum relabsd_axis_name) i);
       axis = relabsd_parameters_get_axis(axis_name, parameters);
 
-      if (relabsd_axis_is_enabled(axis))
+      axis_name = relabsd_axis_get_convert_to(axis);
+
+      if (axis_name == RELABSD_UNKNOWN)
+      {
+         axis_name = ((enum relabsd_axis_name) i);
+      }
+
+      if
+      (
+         relabsd_axis_is_enabled(axis)
+         && !relabsd_axis_has_flag(axis, RELABSD_NOT_ABS)
+      )
       {
          (void) relabsd_virtual_device_update_axis_absinfo
          (
@@ -160,20 +172,23 @@ int relabsd_virtual_device_update_axis_absinfo
     * Might want to add an option to see if people want to use the tool to
     * alter existing EV_ABS axes instead of converting from EV_REL to EV_ABS.
     */
-   (void) libevdev_disable_event_code
-   (
-      device->libevdev,
-      EV_REL,
-      relabsd_axis_name_to_evdev_rel(axis_name)
-   );
+   if (!relabsd_axis_has_flag(axis, RELABSD_NOT_ABS))
+   {
+      (void) libevdev_disable_event_code
+      (
+         device->libevdev,
+         EV_REL,
+         relabsd_axis_name_to_evdev_rel(axis_name)
+      );
 
-   (void) libevdev_enable_event_code
-   (
-      device->libevdev,
-      EV_ABS,
-      relabsd_axis_name_to_evdev_abs(target_axis_name),
-      &absinfo
-   );
+      (void) libevdev_enable_event_code
+      (
+         device->libevdev,
+         EV_ABS,
+         relabsd_axis_name_to_evdev_abs(target_axis_name),
+         &absinfo
+      );
+   }
 
    return 0;
 }
@@ -391,6 +406,11 @@ void relabsd_virtual_device_set_axes_to_zero
 
       axis =
          relabsd_parameters_get_axis((enum relabsd_axis_name) i, parameters);
+
+      if (relabsd_axis_has_flag(axis, RELABSD_NOT_ABS))
+      {
+         continue;
+      }
 
       if (relabsd_axis_is_enabled(axis))
       {

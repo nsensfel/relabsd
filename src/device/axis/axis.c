@@ -46,6 +46,15 @@ void relabsd_axis_enable
    axis->is_enabled = 1;
 }
 
+int relabsd_axis_has_flag
+(
+   const struct relabsd_axis axis [const restrict static 1],
+   const enum relabsd_axis_flag flag
+)
+{
+   return axis->flags[flag];
+}
+
 int relabsd_axis_is_enabled
 (
    const struct relabsd_axis axis [const restrict static 1]

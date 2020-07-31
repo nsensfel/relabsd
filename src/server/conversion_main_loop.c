@@ -43,9 +43,10 @@ static void convert_input
    if (input_type == EV_REL)
    {
       struct relabsd_axis * axis;
-      unsigned int abs_code;
+      unsigned int abs_type, abs_code;
       enum relabsd_axis_name axis_name;
 
+      abs_type = EV_ABS;
       axis_name =
          relabsd_axis_name_and_evdev_abs_from_evdev_rel(input_code, &abs_code);
 
@@ -57,9 +58,25 @@ static void convert_input
       axis = relabsd_parameters_get_axis(axis_name, &(server->parameters));
       axis_name = relabsd_axis_get_convert_to(axis);
 
-      if (axis_name != RELABSD_UNKNOWN)
+      if (relabsd_axis_has_flag(axis, RELABSD_NOT_ABS))
       {
-         abs_code = relabsd_axis_name_to_evdev_abs(axis_name);
+         abs_type = EV_REL;
+
+         if (axis_name == RELABSD_UNKNOWN)
+         {
+            abs_code = input_code;
+         }
+         else
+         {
+            abs_code = relabsd_axis_name_to_evdev_rel(axis_name);
+         }
+      }
+      else
+      {
+         if (axis_name != RELABSD_UNKNOWN)
+         {
+            abs_code = relabsd_axis_name_to_evdev_abs(axis_name);
+         }
       }
 
       switch (relabsd_axis_filter_new_value(axis, &value))
@@ -72,7 +89,7 @@ static void convert_input
             (void) relabsd_virtual_device_write_evdev_event
             (
                &(server->virtual_device),
-               EV_ABS,
+               abs_type,
                abs_code,
                value
             );
@@ -94,33 +111,6 @@ static void convert_input
             );
             return;
       }
-   }
-   else if (input_type == EV_ABS)
-   {
-      enum relabsd_axis_name axis_name;
-
-      axis_name = relabsd_axis_name_from_evdev_abs(input_code);
-
-      if (axis_name != RELABSD_UNKNOWN)
-      {
-         struct relabsd_axis * axis;
-
-         axis = relabsd_parameters_get_axis(axis_name, &(server->parameters));
-         axis_name = relabsd_axis_get_convert_to(axis);
-
-         if (axis_name != RELABSD_UNKNOWN)
-         {
-            input_code = relabsd_axis_name_to_evdev_abs(axis_name);
-         }
-      }
-
-      (void) relabsd_virtual_device_write_evdev_event
-      (
-         &(server->virtual_device),
-         input_type,
-         input_code,
-         value
-      );
    }
    else
    {

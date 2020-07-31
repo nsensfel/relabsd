@@ -115,3 +115,9 @@ void relabsd_axis_set_attributes_are_dirty
    const int val,
    struct relabsd_axis axis [const restrict static 1]
 );
+
+int relabsd_axis_has_flag
+(
+   const struct relabsd_axis axis [const restrict static 1],
+   const enum relabsd_axis_flag flag
+);

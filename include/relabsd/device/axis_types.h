@@ -2,7 +2,7 @@
 
 /* Number of axes that can be configured. */
 #define RELABSD_AXIS_VALID_AXES_COUNT 8
-#define RELABSD_AXIS_FLAGS_COUNT 3
+#define RELABSD_AXIS_FLAGS_COUNT 4
 
 /*
  * C enumerations are always int, and the standard does specify that it starts
@@ -26,7 +26,8 @@ enum relabsd_axis_flag
 {
    RELABSD_DIRECT,
    RELABSD_REAL_FUZZ,
-   RELABSD_FRAMED
+   RELABSD_FRAMED,
+   RELABSD_NOT_ABS
 };
 
 struct relabsd_axis
