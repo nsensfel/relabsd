@@ -57,9 +57,13 @@ int relabsd_axis_enable_option_from_name
          );
       }
    }
-   else if (RELABSD_IS_PREFIX("notabs", option_name))
+   else if (RELABSD_IS_PREFIX("not_abs", option_name))
    {
       axis->flags[RELABSD_NOT_ABS] = 1;
+   }
+   else if (RELABSD_IS_PREFIX("invert", option_name))
+   {
+      axis->flags[RELABSD_INVERT] = 1;
    }
    else if (RELABSD_IS_PREFIX("convert_to=", option_name))
    {

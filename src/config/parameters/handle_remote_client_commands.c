@@ -366,9 +366,26 @@ static int handle_option_toggle
    {
       parameters->axes[axis_name].flags[RELABSD_REAL_FUZZ] ^= 1;
    }
+   else if (RELABSD_STRING_EQUALS("invert", input->buffer))
+   {
+      parameters->axes[axis_name].flags[RELABSD_INVERT] ^= 1;
+   }
+   else if (RELABSD_STRING_EQUALS("not_abs", input->buffer))
+   {
+      parameters->axes[axis_name].flags[RELABSD_NOT_ABS] ^= 1;
+   }
    else if (RELABSD_STRING_EQUALS("enable", input->buffer))
    {
       parameters->axes[axis_name].is_enabled ^= 1;
+   }
+   else if (RELABSD_IS_PREFIX("convert_to=", input->buffer))
+   {
+      relabsd_axis_enable_option_from_name
+      (
+         input->buffer,
+         relabsd_axis_name_to_string(axis_name),
+         (parameters->axes + axis_name)
+      );
    }
    else
    {

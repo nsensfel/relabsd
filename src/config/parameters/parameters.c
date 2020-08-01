@@ -320,7 +320,7 @@ int relabsd_parameters_parse_options
          RELABSD_STRING_EQUALS("-m", argv[i])
          || RELABSD_STRING_EQUALS("--mod-axis", argv[i])
          || RELABSD_STRING_EQUALS("-o", argv[i])
-         || RELABSD_STRING_EQUALS("--toggle-argv[i]", argv[i])
+         || RELABSD_STRING_EQUALS("--toggle-option", argv[i])
          ||RELABSD_STRING_EQUALS("-q", argv[i])
          || RELABSD_STRING_EQUALS("--quit", argv[i])
       )
@@ -460,13 +460,13 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1])
       "\t[-q | --quit]\n"
          "\t\tTerminates the targeted server instance.\n\n"
 
-      "\t[-m | --mod-axis] <axis_name> [min|max|fuzz|flat|resolution]"
-         " [+|-|=]<value>\n"
+      "\t[-m | --mod-axis] <axis_name> "
+         "[min|max|fuzz|flat|resolution] [+|-|=]<value>\n"
          "\t\tModifies an axis.\n\n"
 
       "\t[-o | --toggle-option] <axis_name> "
-         "[direct|real_fuzz|framed|enable|convert_to=<axis_name>]\n"
-         "\t\tToggles an axis option.\n",
+         "[direct|real_fuzz|framed|enable|invert|not_abs|convert_to=<axis_name>]\n"
+         "\t\tToggles or sets an axis option.\n",
       exec,
       exec,
       exec,

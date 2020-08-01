@@ -122,6 +122,11 @@ int relabsd_axis_filter_new_value
       return 0;
    }
 
+   if (axis->flags[RELABSD_INVERT])
+   {
+      *value = -(*value);
+   }
+
    if (axis->flags[RELABSD_NOT_ABS])
    {
       return 1;
