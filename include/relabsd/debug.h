@@ -4,20 +4,34 @@
 
 #include <relabsd/util/macro.h>
 
+//#define RELABSD_USE_MACRO_DEBUG 1
+
+#ifdef RELABSD_USE_MACRO_DEBUG
 #ifndef RELABSD_DEBUG_PROGRAM_FLOW
-   #define RELABSD_DEBUG_PROGRAM_FLOW 0
+   #define RELABSD_DEBUG_PROGRAM_FLOW 1
 #endif
 
 #ifndef RELABSD_DEBUG_CONFIG
-   #define RELABSD_DEBUG_CONFIG 0
+   #define RELABSD_DEBUG_CONFIG 1
 #endif
 
 #ifndef RELABSD_DEBUG_REAL_EVENTS
-   #define RELABSD_DEBUG_REAL_EVENTS 0
+   #define RELABSD_DEBUG_REAL_EVENTS 1
 #endif
 
 #ifndef RELABSD_DEBUG_VIRTUAL_EVENTS
-   #define RELABSD_DEBUG_VIRTUAL_EVENTS 0
+   #define RELABSD_DEBUG_VIRTUAL_EVENTS 1
+#endif
+#else
+extern int RELABSD_DEBUG_PROGRAM_FLOW;
+extern int RELABSD_DEBUG_CONFIG;
+extern int RELABSD_DEBUG_REAL_EVENTS;
+extern int RELABSD_DEBUG_VIRTUAL_EVENTS;
+
+void relabsd_debug_toggle_program_flow (void);
+void relabsd_debug_toggle_config (void);
+void relabsd_debug_toggle_real_event (void);
+void relabsd_debug_toggle_virtual_event (void);
 #endif
 
 #ifndef RELABSD_ENABLE_WARNINGS_OUTPUT

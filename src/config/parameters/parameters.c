@@ -238,6 +238,26 @@ int relabsd_parameters_parse_options
       }
       else if
       (
+         RELABSD_STRING_EQUALS("-v", argv[i])
+         || RELABSD_STRING_EQUALS("--verbose", argv[i])
+      )
+      {
+         relabsd_debug_toggle_real_event();
+         relabsd_debug_toggle_virtual_event();
+      }
+      else if
+      (
+         RELABSD_STRING_EQUALS("-vv", argv[i])
+         || RELABSD_STRING_EQUALS("--very-verbose", argv[i])
+      )
+      {
+         relabsd_debug_toggle_config();
+         relabsd_debug_toggle_program_flow();
+         relabsd_debug_toggle_real_event();
+         relabsd_debug_toggle_virtual_event();
+      }
+      else if
+      (
          RELABSD_STRING_EQUALS("-t", argv[i])
          || RELABSD_STRING_EQUALS("--timeout", argv[i])
       )
@@ -368,6 +388,22 @@ int relabsd_parameters_argument_count_for
    }
    else if
    (
+      RELABSD_STRING_EQUALS("-v", option)
+      || RELABSD_STRING_EQUALS("--verbose", option)
+   )
+   {
+      *result = 0;
+   }
+   else if
+   (
+      RELABSD_STRING_EQUALS("-vv", option)
+      || RELABSD_STRING_EQUALS("--very-verbose", option)
+   )
+   {
+      *result = 0;
+   }
+   else if
+   (
       RELABSD_STRING_EQUALS("-t", option)
       || RELABSD_STRING_EQUALS("--timeout", option)
    )
@@ -441,6 +477,12 @@ void relabsd_parameters_print_usage (const char exec [const restrict static 1])
 
       "\t[-t | --timeout] <timeout_in_ms>\n"
          "\t\tSets a zeroing timeout (0 to disable).\n\n"
+
+      "\t[-v | --verbose]\n"
+         "\t\tPrint incoming and outgoing events to stdout.\n\n"
+
+      "\t[-vv | --very-verbose]\n"
+         "\t\tPrint program flow, incoming and outgoing events to stdout.\n\n"
 
       "<CONF_OPTION>:\n"
       "\t<GLOBAL_CONF_OPTION>\n\n"
