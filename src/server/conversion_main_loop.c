@@ -17,27 +17,33 @@
 /******************************************************************************/
 /**** LOCAL FUNCTIONS *********************************************************/
 /******************************************************************************/
-static void convert_input
+
+/*
+ * Returned values:
+ * -1 -> error.
+ * 0 -> No more events available.
+ * 1 -> Maybe more events available.
+ */
+static int convert_input
 (
    struct relabsd_server server [const restrict static 1]
 )
 {
    unsigned int input_type, input_code;
-   int value;
+   int value, return_code;
 
-   if
-   (
+   return_code =
       relabsd_physical_device_read
       (
          &(server->physical_device),
          &input_type,
          &input_code,
          &value
-      )
-      < 0
-   )
+      );
+
+   if (return_code <= 0)
    {
-      return;
+      return 0;
    }
 
    if (input_type == EV_REL)
@@ -52,7 +58,7 @@ static void convert_input
 
       if (axis_name == RELABSD_UNKNOWN)
       {
-         return;
+         return return_code;
       }
 
       axis = relabsd_parameters_get_axis(axis_name, &(server->parameters));
@@ -83,7 +89,7 @@ static void convert_input
       {
          case -1:
             /* Doesn't want the event to be transmitted. */
-            return;
+            return return_code;
 
          case 1:
             (void) relabsd_virtual_device_write_evdev_event
@@ -99,7 +105,7 @@ static void convert_input
                0,
                &(server->virtual_device)
             );
-            return;
+            return return_code;
 
          case 0:
             (void) relabsd_virtual_device_write_evdev_event
@@ -109,7 +115,7 @@ static void convert_input
                input_code,
                value
             );
-            return;
+            return return_code;
       }
    }
    else
@@ -123,6 +129,8 @@ static void convert_input
          value
       );
    }
+
+   return return_code;
 }
 
 static void reset_axes
@@ -266,7 +274,8 @@ int relabsd_server_conversion_loop
             )
             {
                pthread_mutex_lock(&(server->mutex));
-               convert_input(server);
+               /* convert all events in the libevdev buffer. */
+               while (convert_input(server) > 0);
                pthread_mutex_unlock(&(server->mutex));
             }
 

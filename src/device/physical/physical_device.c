@@ -148,14 +148,13 @@ int relabsd_physical_device_read
                 * through them in order.
                 * TODO: add an option to allow users to drop events when late.
                 */
-               device->is_late ?
+               (device->is_late == 1) ?
                LIBEVDEV_READ_FLAG_SYNC
                : LIBEVDEV_READ_FLAG_NORMAL
             )
             /* "The fd is not in O_NONBLOCK and a read may block." */
             | LIBEVDEV_READ_FLAG_BLOCKING
-         )
-         ,
+         ),
          &event
       );
 
@@ -166,7 +165,7 @@ int relabsd_physical_device_read
          RELABSD_DEBUG
          (
             RELABSD_DEBUG_REAL_EVENTS,
-            "Valid event received: {type = %s; code = %s; value = %d}.",
+            "SUCCESS Valid event received: {type = %s; code = %s; value = %d}.",
              libevdev_event_type_get_name(event.type),
              libevdev_event_code_get_name(event.type, event.code),
              event.value
@@ -176,7 +175,9 @@ int relabsd_physical_device_read
          *input_code = event.code;
          *input_value = event.value;
 
-         return 0;
+         device->is_late = 0;
+
+         return 1;
 
       /* Code indicating that we are late. */
       case LIBEVDEV_READ_STATUS_SYNC:
@@ -187,21 +188,26 @@ int relabsd_physical_device_read
           * so we don't actually have any input event in hand.
           */
 
-         /* FIXME: Really make sure this cannot recurse a second time. */
-         return
-            relabsd_physical_device_read
-            (
-               device,
-               input_type,
-               input_code,
-               input_value
-            );
+         *input_type = event.type;
+         *input_code = event.code;
+         *input_value = event.value;
+
+         RELABSD_DEBUG
+         (
+            RELABSD_DEBUG_REAL_EVENTS,
+            "SYNC Valid event received: {type = %s; code = %s; value = %d}.",
+             libevdev_event_type_get_name(event.type),
+             libevdev_event_code_get_name(event.type, event.code),
+             event.value
+         );
+
+         return 1;
 
       /* No event to read. */
       case -EAGAIN:
          device->is_late = 0;
 
-         return -1;
+         return 0;
 
       default:
          RELABSD_FATAL

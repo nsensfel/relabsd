@@ -23,7 +23,8 @@ void relabsd_physical_device_close
 
 /*
  * Returns -1 on (warning) error,
- *         0 on successful read.
+ *         0 if there is nothing to read,
+ *         1 if something was read (and there may be more to read).
  *
  * The 'input_*' parameters do not need to be initialized, as the function will
  * do that for you (on success).
