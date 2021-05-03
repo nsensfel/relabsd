@@ -136,6 +136,11 @@ int relabsd_physical_device_read
    int returned_code;
    struct input_event event;
 
+   if (!libevdev_has_event_pending(device->libevdev))
+   {
+      return 0;
+   }
+
    returned_code =
       libevdev_next_event
       (
