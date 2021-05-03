@@ -248,6 +248,7 @@ int relabsd_server_conversion_loop
    struct relabsd_server server [const static 1]
 )
 {
+   int has_more_to_read;
    fd_set ready_to_read;
 
    for (;;)
@@ -273,10 +274,14 @@ int relabsd_server_conversion_loop
                )
             )
             {
-               pthread_mutex_lock(&(server->mutex));
-               /* convert all events in the libevdev buffer. */
-               while (convert_input(server) > 0);
-               pthread_mutex_unlock(&(server->mutex));
+               do
+               {
+                  pthread_mutex_lock(&(server->mutex));
+                  /* convert all events in the libevdev buffer. */
+                  has_more_to_read = (convert_input(server) > 0);
+                  pthread_mutex_unlock(&(server->mutex));
+               }
+               while (has_more_to_read && relabsd_server_keep_running());
             }
 
             break;
