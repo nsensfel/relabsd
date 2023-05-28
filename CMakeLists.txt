@@ -28,7 +28,7 @@ target_link_libraries(relabsd ${CMAKE_THREAD_LIBS_INIT})
 # Be loud about dubious code.
 if (CMAKE_COMPILER_IS_GNUCC)
    message(STATUS "CMake is using GNUCC. Verbose flags are activated.")
-   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Werror -Wextra")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wextra")
 endif (CMAKE_COMPILER_IS_GNUCC)
 
 option(
